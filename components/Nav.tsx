@@ -5,18 +5,43 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import Logo from "./Logo";
+import { locales, localeNames, type Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-const LINKS = [
-  { href: "/services", label: "Services", index: "01" },
-  { href: "/network", label: "Network", index: "02" },
-  { href: "/track", label: "Track", index: "03" },
-  { href: "/contact", label: "Get a quote", index: "04" },
-];
+function LangSwitcher({ locale, className = "" }: { locale: Locale; className?: string }) {
+  const pathname = usePathname();
+  // swap the locale prefix, keep the rest of the path
+  const rest = pathname.replace(/^\/(en|fr|ar)(?=\/|$)/, "") || "";
 
-export default function Nav() {
+  return (
+    <div className={`flex items-center border border-edge font-mono text-[10px] tracking-[0.15em] ${className}`}>
+      {locales.map((l) => (
+        <Link
+          key={l}
+          href={`/${l}${rest}`}
+          aria-current={l === locale ? "true" : undefined}
+          className={`px-2.5 py-1.5 uppercase transition-colors ${
+            l === locale ? "bg-volt text-black" : "text-ash hover:text-volt"
+          }`}
+        >
+          {localeNames[l]}
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary["nav"] }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+
+  const links = [
+    { href: `/${locale}/services`, label: dict.services, index: "01" },
+    { href: `/${locale}/network`, label: dict.network, index: "02" },
+    { href: `/${locale}/track`, label: dict.track, index: "03" },
+    { href: `/${locale}/contact`, label: dict.quote, index: "04" },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -42,10 +67,10 @@ export default function Nav() {
         }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
-          <Logo />
+          <Logo locale={locale} label={dict.home} />
 
           <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
-            {LINKS.map((link) => {
+            {links.map((link) => {
               const active = pathname === link.href;
               return (
                 <Link
@@ -55,22 +80,23 @@ export default function Nav() {
                     active ? "text-volt" : "text-ash hover:text-bone"
                   }`}
                 >
-                  <span className="mr-1.5 text-volt/60">{link.index}</span>
+                  <span className="me-1.5 text-volt/60">{link.index}</span>
                   {link.label}
                   <span
-                    className={`absolute -bottom-1.5 left-0 h-px bg-volt transition-all duration-300 ${
+                    className={`absolute -bottom-1.5 start-0 h-px bg-volt transition-all duration-300 ${
                       active ? "w-full" : "w-0 group-hover:w-full"
                     }`}
                   />
                 </Link>
               );
             })}
+            <LangSwitcher locale={locale} />
           </nav>
 
           <button
             onClick={() => setOpen(!open)}
             className="relative z-50 flex h-10 w-10 flex-col items-center justify-center gap-1.5 md:hidden"
-            aria-label={open ? "Close menu" : "Open menu"}
+            aria-label={open ? dict.closeMenu : dict.openMenu}
             aria-expanded={open}
           >
             <motion.span
@@ -96,7 +122,7 @@ export default function Nav() {
           >
             <div className="grid-lines pointer-events-none absolute inset-0" />
             <nav className="relative px-6 pb-24" aria-label="Mobile">
-              {LINKS.map((link, i) => (
+              {links.map((link, i) => (
                 <motion.div
                   key={link.href}
                   initial={{ opacity: 0, x: -32 }}
@@ -114,14 +140,17 @@ export default function Nav() {
                   </Link>
                 </motion.div>
               ))}
-              <motion.p
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.55 }}
-                className="mt-8 font-mono text-[10px] tracking-[0.3em] text-smoke uppercase"
+                transition={{ delay: 0.5 }}
+                className="mt-8 flex items-center justify-between gap-4"
               >
-                Delivery infrastructure — EST. 2019
-              </motion.p>
+                <p className="font-mono text-[10px] tracking-[0.3em] text-smoke uppercase">
+                  {dict.tagline}
+                </p>
+                <LangSwitcher locale={locale} />
+              </motion.div>
             </nav>
             <div className="hazard h-2" />
           </motion.div>

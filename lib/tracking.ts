@@ -2,6 +2,8 @@
  * Deterministic shipment generator for the tracking demo.
  * The same tracking code always resolves to the same shipment,
  * so the demo behaves like a real lookup service without a backend.
+ * All human-readable labels are resolved from the i18n dictionary
+ * by the UI — this module only deals in stable keys.
  */
 
 export type ShipmentStage =
@@ -12,9 +14,17 @@ export type ShipmentStage =
   | "OUT_FOR_DELIVERY"
   | "DELIVERED";
 
+export const STAGES: ShipmentStage[] = [
+  "REGISTERED",
+  "PICKED_UP",
+  "AT_HUB",
+  "LINE_HAUL",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+];
+
 export interface TimelineEvent {
   stage: ShipmentStage;
-  label: string;
   location: string;
   timestamp: string;
   done: boolean;
@@ -25,40 +35,33 @@ export interface Shipment {
   code: string;
   origin: string;
   destination: string;
-  service: string;
+  serviceIdx: number; // index into dict.trackPage.serviceNames
   weightKg: string;
+  codDt: number; // cash to collect on delivery, in dinars
   pieces: number;
   stageIndex: number;
   progress: number; // 0..1 across whole journey
-  eta: string;
+  eta: string | null; // null = completed
   events: TimelineEvent[];
 }
 
-const CITIES = [
-  "PARIS CDG-7",
-  "LYON SUD-2",
-  "MARSEILLE P-4",
-  "LILLE NRD-1",
-  "BORDEAUX W-3",
-  "TOULOUSE M-6",
-  "NANTES A-5",
-  "STRASBOURG E-2",
-  "ROTTERDAM RT-9",
-  "MILANO MX-3",
-  "BARCELONA BC-8",
-  "FRANKFURT FR-1",
+// Relay codes stay in Latin script across locales, like flight codes.
+const HUBS = [
+  "TUNIS TUN-1",
+  "ARIANA ARN-2",
+  "BEN AROUS BNA-3",
+  "NABEUL NBL-4",
+  "BIZERTE BZT-5",
+  "SOUSSE SUS-6",
+  "MONASTIR MNS-7",
+  "SFAX SFX-8",
+  "KAIROUAN KRN-9",
+  "GABÈS GBS-10",
+  "MÉDENINE MDN-11",
+  "TOZEUR TZR-12",
 ];
 
-const SERVICES = ["FLASH SAME-DAY", "NIGHT LINE-HAUL", "STANDARD B2B", "COLD CHAIN", "HEAVY FREIGHT"];
-
-const STAGES: { stage: ShipmentStage; label: string }[] = [
-  { stage: "REGISTERED", label: "Order registered" },
-  { stage: "PICKED_UP", label: "Picked up at shipper dock" },
-  { stage: "AT_HUB", label: "Sorted at origin hub" },
-  { stage: "LINE_HAUL", label: "In line-haul transit" },
-  { stage: "OUT_FOR_DELIVERY", label: "Out for delivery" },
-  { stage: "DELIVERED", label: "Delivered & signed" },
-];
+export const SERVICE_COUNT = 5;
 
 export const TRACKING_PATTERN = /^RX-?\d{6}$/i;
 
@@ -88,38 +91,38 @@ function mulberry32(seed: number) {
   };
 }
 
-function fmt(d: Date): string {
+function fmt(d: Date, locale: string): string {
   return d
-    .toLocaleString("en-GB", {
+    .toLocaleString(locale, {
       day: "2-digit",
       month: "short",
       hour: "2-digit",
       minute: "2-digit",
+      numberingSystem: "latn",
     })
     .toUpperCase()
     .replace(",", " ·");
 }
 
-export function lookupShipment(rawCode: string): Shipment {
+export function lookupShipment(rawCode: string, locale: string): Shipment {
   const code = normalizeCode(rawCode);
   const rand = mulberry32(hash(code));
 
-  const originIdx = Math.floor(rand() * CITIES.length);
-  let destIdx = Math.floor(rand() * CITIES.length);
-  if (destIdx === originIdx) destIdx = (destIdx + 1) % CITIES.length;
+  const originIdx = Math.floor(rand() * HUBS.length);
+  let destIdx = Math.floor(rand() * HUBS.length);
+  if (destIdx === originIdx) destIdx = (destIdx + 1) % HUBS.length;
 
   const stageIndex = Math.floor(rand() * STAGES.length);
   const stepHours = 3 + rand() * 9;
   const start = new Date(Date.now() - stageIndex * stepHours * 3_600_000);
 
-  const events: TimelineEvent[] = STAGES.map((s, i) => {
+  const events: TimelineEvent[] = STAGES.map((stage, i) => {
     const t = new Date(start.getTime() + i * stepHours * 3_600_000);
     const midpoints = [originIdx, originIdx, originIdx, destIdx, destIdx, destIdx];
     return {
-      stage: s.stage,
-      label: s.label,
-      location: CITIES[midpoints[i]],
-      timestamp: i <= stageIndex ? fmt(t) : "—",
+      stage,
+      location: HUBS[midpoints[i]],
+      timestamp: i <= stageIndex ? fmt(t, locale) : "—",
       done: i < stageIndex,
       current: i === stageIndex,
     };
@@ -127,16 +130,17 @@ export function lookupShipment(rawCode: string): Shipment {
 
   const eta =
     stageIndex >= STAGES.length - 1
-      ? "COMPLETED"
-      : fmt(new Date(start.getTime() + (STAGES.length - 1) * stepHours * 3_600_000));
+      ? null
+      : fmt(new Date(start.getTime() + (STAGES.length - 1) * stepHours * 3_600_000), locale);
 
   return {
     code,
-    origin: CITIES[originIdx],
-    destination: CITIES[destIdx],
-    service: SERVICES[Math.floor(rand() * SERVICES.length)],
-    weightKg: (0.4 + rand() * 240).toFixed(1),
-    pieces: 1 + Math.floor(rand() * 12),
+    origin: HUBS[originIdx],
+    destination: HUBS[destIdx],
+    serviceIdx: Math.floor(rand() * SERVICE_COUNT),
+    weightKg: (0.4 + rand() * 38).toFixed(1),
+    codDt: Math.round(15 + rand() * 480),
+    pieces: 1 + Math.floor(rand() * 6),
     stageIndex,
     progress: stageIndex / (STAGES.length - 1),
     eta,

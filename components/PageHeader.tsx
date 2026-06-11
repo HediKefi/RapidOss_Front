@@ -18,7 +18,7 @@ export default function PageHeader({
       <div className="relative mx-auto max-w-7xl px-5 pt-36 pb-16 sm:px-8 md:pt-44 md:pb-20">
         <Reveal>
           <p className="font-mono text-[11px] tracking-[0.3em] text-volt uppercase">
-            <span className="mr-3 text-smoke">{index} /</span>
+            <span className="me-3 text-smoke">{index} /</span>
             {kicker}
           </p>
         </Reveal>

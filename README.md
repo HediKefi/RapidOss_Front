@@ -1,11 +1,27 @@
 # RAPIDOSS — Front
 
-Marketing & operations front-end for RAPIDOSS, a company that runs the delivery
-operation of other companies (same-day, night line-haul, cold chain, heavy
-freight, returns).
+Marketing & operations front-end for RAPIDOSS, a Tunisian delivery company
+that runs e-commerce logistics end to end: express pickup, 24h Grand Tunis /
+48h nationwide delivery, cash-on-delivery management and marketing support.
+Content inspired by [rapidoss.tn](https://rapidoss.tn/).
 
 Built with **Next.js 16** (App Router), **Tailwind CSS v4** and
 **Framer Motion**. Brand: black & yellow, industrial-futuristic.
+
+## Internationalisation
+
+Three locales — **French** (default), **English** and **Arabic** — served
+under locale-prefixed routes (`/fr`, `/en`, `/ar`):
+
+- `middleware.ts` redirects bare paths to the visitor's preferred locale
+  (Accept-Language detection, falling back to `fr`).
+- Dictionaries live in `lib/i18n/{en,fr,ar}.ts`; the English file is the
+  canonical shape and the other locales are type-checked against it.
+- Arabic renders fully **RTL** (`dir="rtl"`) with IBM Plex Sans Arabic,
+  mirrored directional UI (logical CSS properties + `rtl:` variants) and
+  letter-spacing neutralised for cursive script. Mechanical geometry
+  (marquees, progress bars, waybill codes) stays pinned LTR.
+- All 15 locale pages are statically prerendered via `generateStaticParams`.
 
 ## Run it
 

@@ -5,17 +5,17 @@ import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { lookupShipment, type Shipment } from "@/lib/tracking";
 import TrackSearch from "./TrackSearch";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 type Phase = "idle" | "scanning" | "result";
 
-const SCAN_LINES = [
-  "HANDSHAKE WITH CONTROL TOWER…",
-  "QUERYING HUB MANIFESTS…",
-  "CROSS-CHECKING CARRIER TELEMETRY…",
-  "WAYBILL LOCATED — DECRYPTING ROUTE",
-];
-
-export default function TrackClient() {
+export default function TrackClient({
+  locale,
+  dict,
+}: {
+  locale: string;
+  dict: Dictionary["trackPage"];
+}) {
   const params = useSearchParams();
   const id = params.get("id");
   const validId = id && /^RX-?\d{6}$/i.test(id.trim()) ? id.trim() : null;
@@ -38,11 +38,11 @@ export default function TrackClient() {
     if (!validId) return;
 
     const lineTimer = setInterval(
-      () => setScanLine((l) => Math.min(l + 1, SCAN_LINES.length - 1)),
+      () => setScanLine((l) => Math.min(l + 1, dict.scanLines.length - 1)),
       420
     );
     const doneTimer = setTimeout(() => {
-      setShipment(lookupShipment(validId));
+      setShipment(lookupShipment(validId, locale));
       setPhase("result");
     }, 1900);
 
@@ -50,12 +50,12 @@ export default function TrackClient() {
       clearInterval(lineTimer);
       clearTimeout(doneTimer);
     };
-  }, [validId]);
+  }, [validId, locale, dict.scanLines.length]);
 
   return (
     <div className="mx-auto max-w-5xl px-5 pb-28 sm:px-8">
       <div className="mt-12">
-        <TrackSearch autoFocus={!id} />
+        <TrackSearch locale={locale} dict={dict.search} autoFocus={!id} />
       </div>
 
       <AnimatePresence mode="wait">
@@ -67,19 +67,19 @@ export default function TrackClient() {
             exit={{ opacity: 0 }}
             className="mt-14 border border-edge bg-panel p-8 clip-notch"
           >
-            <div className="relative h-1 overflow-hidden bg-edge">
+            <div className="relative h-1 overflow-hidden bg-edge" dir="ltr">
               <div className="animate-scan absolute inset-y-0 w-1/4 bg-volt" />
             </div>
             <div className="mt-6 space-y-2 font-mono text-xs tracking-[0.18em] text-ash uppercase">
-              {SCAN_LINES.slice(0, scanLine + 1).map((line, i) => (
+              {dict.scanLines.slice(0, scanLine + 1).map((line, i) => (
                 <motion.p
                   key={line}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                 >
-                  <span className="mr-3 text-volt">{">"}</span>
+                  <span className="me-3 text-volt">{">"}</span>
                   {line}
-                  {i === scanLine && <span className="animate-blink ml-1 text-volt">▮</span>}
+                  {i === scanLine && <span className="animate-blink ms-1 text-volt">▮</span>}
                 </motion.p>
               ))}
             </div>
@@ -98,7 +98,7 @@ export default function TrackClient() {
             {/* manifest header */}
             <div className="border border-edge bg-panel clip-notch">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-edge px-7 py-4">
-                <p className="font-mono text-sm font-semibold tracking-[0.2em] text-volt">
+                <p className="font-mono text-sm font-semibold tracking-[0.2em] text-volt" dir="ltr">
                   {shipment.code}
                 </p>
                 <p
@@ -108,30 +108,32 @@ export default function TrackClient() {
                       : "border border-volt/40 text-volt"
                   }`}
                 >
-                  {shipment.events[shipment.stageIndex].stage.replaceAll("_", " ")}
+                  {dict.stageBadges[shipment.events[shipment.stageIndex].stage]}
                 </p>
               </div>
 
-              <div className="grid gap-px bg-edge sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-px bg-edge sm:grid-cols-2 lg:grid-cols-5">
                 {[
-                  ["Origin", shipment.origin],
-                  ["Destination", shipment.destination],
-                  ["Service", shipment.service],
-                  ["Load", `${shipment.pieces} PCS · ${shipment.weightKg} KG`],
+                  [dict.fields.origin, shipment.origin],
+                  [dict.fields.destination, shipment.destination],
+                  [dict.fields.service, dict.serviceNames[shipment.serviceIdx]],
+                  [dict.fields.load, `${shipment.pieces} ${dict.pcs} · ${shipment.weightKg} KG`],
+                  [dict.fields.cod, `${shipment.codDt} DT`],
                 ].map(([k, v]) => (
-                  <div key={k} className="bg-panel px-7 py-5">
+                  <div key={k} className="bg-panel px-7 py-5 lg:px-5">
                     <p className="font-mono text-[9px] tracking-[0.25em] text-smoke uppercase">{k}</p>
                     <p className="mt-1.5 font-mono text-sm tracking-wide">{v}</p>
                   </div>
                 ))}
               </div>
 
-              {/* journey progress */}
-              <div className="border-t border-edge px-7 py-6">
+              {/* journey progress — geometry pinned LTR so origin stays on the left */}
+              <div className="border-t border-edge px-7 py-6" dir="ltr">
                 <div className="flex items-center justify-between font-mono text-[9px] tracking-[0.25em] text-smoke uppercase">
                   <span>{shipment.origin}</span>
                   <span>
-                    ETA <span className="text-volt">{shipment.eta}</span>
+                    {dict.eta}{" "}
+                    <span className="text-volt">{shipment.eta ?? dict.completed}</span>
                   </span>
                   <span>{shipment.destination}</span>
                 </div>
@@ -155,7 +157,7 @@ export default function TrackClient() {
             </div>
 
             {/* event timeline */}
-            <ol className="relative mt-10 space-y-0 border-l-2 border-edge pl-8">
+            <ol className="relative mt-10 space-y-0 border-s-2 border-edge ps-8">
               {shipment.events.map((ev, i) => (
                 <motion.li
                   key={ev.stage}
@@ -165,7 +167,7 @@ export default function TrackClient() {
                   className={`relative pb-9 ${ev.done || ev.current ? "" : "opacity-35"}`}
                 >
                   <span
-                    className={`absolute top-0.5 -left-[2.45rem] grid h-5 w-5 place-items-center border ${
+                    className={`absolute top-0.5 -start-[2.45rem] grid h-5 w-5 place-items-center border ${
                       ev.current
                         ? "border-volt bg-volt"
                         : ev.done
@@ -188,7 +190,7 @@ export default function TrackClient() {
                         ev.current ? "text-volt" : ""
                       }`}
                     >
-                      {ev.label}
+                      {dict.stages[ev.stage]}
                     </h3>
                     <span className="font-mono text-[10px] tracking-[0.2em] text-smoke">
                       {ev.timestamp}
@@ -202,8 +204,7 @@ export default function TrackClient() {
             </ol>
 
             <p className="mt-4 border-t border-edge pt-6 font-mono text-[10px] leading-relaxed tracking-[0.18em] text-smoke uppercase">
-              {`// Demo environment — waybill data is simulated deterministically
-              from the code you enter. Same code, same journey, every time.`}
+              {dict.demoNote}
             </p>
           </motion.div>
         )}

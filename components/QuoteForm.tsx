@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
 interface Fields {
   company: string;
@@ -11,14 +12,11 @@ interface Fields {
   notes: string;
 }
 
-const MODES = ["Same-day", "Line-haul", "Cold chain", "Heavy freight", "Returns"];
-const VOLUMES = ["< 100 / week", "100 – 1K / week", "1K – 10K / week", "10K+ / week"];
-
 const inputCls =
   "w-full border border-edge-hi bg-carbon px-4 py-3.5 text-sm text-bone placeholder:text-smoke transition-colors duration-300 focus:border-volt focus:outline-none";
 const labelCls = "mb-2 block font-mono text-[10px] tracking-[0.25em] text-ash uppercase";
 
-export default function QuoteForm() {
+export default function QuoteForm({ dict }: { dict: Dictionary["contactPage"]["form"] }) {
   const [fields, setFields] = useState<Fields>({
     company: "",
     email: "",
@@ -47,10 +45,10 @@ export default function QuoteForm() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const next: typeof errors = {};
-    if (fields.company.trim().length < 2) next.company = "Company name required";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) next.email = "Valid work email required";
-    if (!fields.volume) next.volume = "Pick a volume band";
-    if (fields.modes.length === 0) next.modes = "Select at least one mode";
+    if (fields.company.trim().length < 2) next.company = dict.errors.company;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email)) next.email = dict.errors.email;
+    if (!fields.volume) next.volume = dict.errors.volume;
+    if (fields.modes.length === 0) next.modes = dict.errors.modes;
     setErrors(next);
     if (Object.keys(next).length > 0) return;
 
@@ -112,15 +110,14 @@ export default function QuoteForm() {
               />
             </motion.svg>
             <h3 className="mt-7 text-2xl font-bold tracking-tighter uppercase md:text-3xl">
-              Request logged
+              {dict.successTitle}
             </h3>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-ash">
-              Reference <span className="font-mono text-volt">{reference}</span>.
-              A lane engineer will come back to {fields.email || "you"} with a
-              costed proposal within 48 hours.
+              {dict.successBody1} <span className="font-mono text-volt">{reference}</span>
+              {dict.successBody2}
             </p>
             <p className="mt-6 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
-              {"// Demo form — nothing was actually sent"}
+              {dict.successNote}
             </p>
           </motion.div>
         ) : (
@@ -134,27 +131,27 @@ export default function QuoteForm() {
             <div className="grid gap-7 md:grid-cols-2">
               <div>
                 <label htmlFor="company" className={labelCls}>
-                  Company
+                  {dict.company}
                 </label>
                 <input
                   id="company"
                   value={fields.company}
                   onChange={(e) => set("company", e.target.value)}
-                  placeholder="Acme Industries"
+                  placeholder={dict.companyPlaceholder}
                   className={inputCls}
                 />
                 {fieldError("company")}
               </div>
               <div>
                 <label htmlFor="email" className={labelCls}>
-                  Work email
+                  {dict.email}
                 </label>
                 <input
                   id="email"
                   type="email"
                   value={fields.email}
                   onChange={(e) => set("email", e.target.value)}
-                  placeholder="ops@acme.com"
+                  placeholder={dict.emailPlaceholder}
                   className={inputCls}
                 />
                 {fieldError("email")}
@@ -162,9 +159,9 @@ export default function QuoteForm() {
             </div>
 
             <fieldset className="mt-8">
-              <legend className={labelCls}>Weekly volume</legend>
+              <legend className={labelCls}>{dict.volume}</legend>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {VOLUMES.map((v) => (
+                {dict.volumes.map((v) => (
                   <button
                     key={v}
                     type="button"
@@ -184,9 +181,9 @@ export default function QuoteForm() {
             </fieldset>
 
             <fieldset className="mt-8">
-              <legend className={labelCls}>Modes needed</legend>
+              <legend className={labelCls}>{dict.modes}</legend>
               <div className="flex flex-wrap gap-2">
-                {MODES.map((m) => {
+                {dict.modeOptions.map((m) => {
                   const on = fields.modes.includes(m);
                   return (
                     <button
@@ -200,7 +197,7 @@ export default function QuoteForm() {
                           : "border-edge-hi text-ash hover:border-volt/60 hover:text-bone"
                       }`}
                     >
-                      <span className={`mr-2 ${on ? "text-volt" : "text-smoke"}`}>
+                      <span className={`me-2 ${on ? "text-volt" : "text-smoke"}`}>
                         {on ? "▣" : "▢"}
                       </span>
                       {m}
@@ -213,14 +210,14 @@ export default function QuoteForm() {
 
             <div className="mt-8">
               <label htmlFor="notes" className={labelCls}>
-                What are you shipping? <span className="text-smoke">(optional)</span>
+                {dict.notes} <span className="text-smoke">{dict.notesOptional}</span>
               </label>
               <textarea
                 id="notes"
                 value={fields.notes}
                 onChange={(e) => set("notes", e.target.value)}
                 rows={4}
-                placeholder="Lanes, SKUs, temperature constraints, current pain…"
+                placeholder={dict.notesPlaceholder}
                 className={`${inputCls} resize-none`}
               />
             </div>
@@ -232,13 +229,13 @@ export default function QuoteForm() {
             >
               {sending ? (
                 <span className="flex items-center justify-center gap-3">
-                  <span className="relative inline-block h-1 w-20 overflow-hidden bg-black/20">
+                  <span className="relative inline-block h-1 w-20 overflow-hidden bg-black/20" dir="ltr">
                     <span className="animate-scan absolute inset-y-0 w-1/3 bg-black" />
                   </span>
-                  Transmitting
+                  {dict.sending}
                 </span>
               ) : (
-                <>Request proposal →</>
+                <>{dict.submit}</>
               )}
             </button>
           </motion.form>

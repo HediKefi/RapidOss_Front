@@ -22,7 +22,8 @@ export default function Marquee({
   );
 
   return (
-    <div className={`overflow-hidden ${className}`}>
+    // dir=ltr keeps the loop geometry stable when the page is RTL
+    <div className={`overflow-hidden ${className}`} dir="ltr">
       <div
         className={`flex w-max ${fast ? "animate-marquee-fast" : "animate-marquee"} hover:[animation-play-state:paused]`}
       >

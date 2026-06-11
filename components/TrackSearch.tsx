@@ -2,9 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-/** Inline tracking-code input — validates RX-###### and routes to /track. */
-export default function TrackSearch({ autoFocus = false }: { autoFocus?: boolean }) {
+/** Inline tracking-code input — validates RX-###### and routes to the locale's /track. */
+export default function TrackSearch({
+  locale,
+  dict,
+  autoFocus = false,
+}: {
+  locale: string;
+  dict: Dictionary["trackPage"]["search"];
+  autoFocus?: boolean;
+}) {
   const router = useRouter();
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
@@ -16,7 +25,7 @@ export default function TrackSearch({ autoFocus = false }: { autoFocus?: boolean
       setError(true);
       return;
     }
-    router.push(`/track?id=${encodeURIComponent(cleaned)}`);
+    router.push(`/${locale}/track?id=${encodeURIComponent(cleaned)}`);
   };
 
   return (
@@ -26,8 +35,8 @@ export default function TrackSearch({ autoFocus = false }: { autoFocus?: boolean
           error ? "border-volt" : "border-edge-hi focus-within:border-volt"
         }`}
       >
-        <span className="hidden items-center border-r border-edge px-4 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase sm:flex">
-          Waybill
+        <span className="hidden items-center border-e border-edge px-4 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase sm:flex">
+          {dict.waybill}
         </span>
         <input
           value={value}
@@ -36,15 +45,16 @@ export default function TrackSearch({ autoFocus = false }: { autoFocus?: boolean
             setError(false);
           }}
           autoFocus={autoFocus}
-          placeholder="RX-481 992"
-          aria-label="Tracking code"
-          className="min-w-0 flex-1 bg-transparent px-4 py-4 font-mono text-sm tracking-[0.18em] text-bone uppercase placeholder:text-smoke focus:outline-none"
+          placeholder={dict.placeholder}
+          aria-label={dict.ariaLabel}
+          dir="ltr"
+          className="min-w-0 flex-1 bg-transparent px-4 py-4 font-mono text-sm tracking-[0.18em] text-bone uppercase placeholder:text-smoke focus:outline-none rtl:text-end"
         />
         <button
           type="submit"
           className="bg-volt px-5 font-mono text-xs font-semibold tracking-[0.2em] text-black uppercase transition-colors hover:bg-volt-hot sm:px-7"
         >
-          Trace
+          {dict.button}
         </button>
       </div>
       <p
@@ -53,7 +63,7 @@ export default function TrackSearch({ autoFocus = false }: { autoFocus?: boolean
         }`}
         role={error ? "alert" : undefined}
       >
-        {error ? "// Invalid format — expected RX followed by 6 digits" : "Format: RX-000000 — try any 6 digits"}
+        {error ? dict.error : dict.hint}
       </p>
     </form>
   );

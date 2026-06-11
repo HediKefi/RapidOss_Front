@@ -1,42 +1,45 @@
 import Link from "next/link";
 import Logo from "./Logo";
 import Marquee from "./Marquee";
+import type { Locale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries";
 
-const CITIES = [
-  "PARIS", "LYON", "MARSEILLE", "LILLE", "BORDEAUX", "TOULOUSE",
-  "NANTES", "STRASBOURG", "ROTTERDAM", "MILANO", "BARCELONA", "FRANKFURT",
-];
+export default function Footer({
+  locale,
+  dict,
+}: {
+  locale: Locale;
+  dict: Dictionary["footer"];
+}) {
+  const links = [
+    [dict.links.services, `/${locale}/services`],
+    [dict.links.network, `/${locale}/network`],
+    [dict.links.track, `/${locale}/track`],
+    [dict.links.quote, `/${locale}/contact`],
+  ];
 
-export default function Footer() {
   return (
     <footer className="border-t border-edge bg-carbon">
       <Marquee
-        items={CITIES}
+        items={dict.cities}
         className="border-b border-edge py-3 font-mono text-[11px] tracking-[0.3em] text-smoke"
       />
 
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <Logo />
-          <p className="mt-5 max-w-xs text-sm leading-relaxed text-ash">
-            We run the delivery operations of 400+ companies across Europe —
-            same-day, line-haul, cold chain and heavy freight, under one
-            contract and one control tower.
-          </p>
+          <Logo locale={locale} label="RAPIDOSS" />
+          <p className="mt-5 max-w-xs text-sm leading-relaxed text-ash">{dict.blurb}</p>
           <p className="mt-6 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
-            Dispatch desk · 24/7 · +33 1 84 00 26 26
+            {dict.dispatch}
           </p>
         </div>
 
         <nav aria-label="Footer">
-          <h3 className="font-mono text-[10px] tracking-[0.3em] text-volt uppercase">Navigate</h3>
+          <h3 className="font-mono text-[10px] tracking-[0.3em] text-volt uppercase">
+            {dict.navigate}
+          </h3>
           <ul className="mt-5 space-y-3 text-sm">
-            {[
-              ["Services", "/services"],
-              ["Network", "/network"],
-              ["Track a shipment", "/track"],
-              ["Get a quote", "/contact"],
-            ].map(([label, href]) => (
+            {links.map(([label, href]) => (
               <li key={href}>
                 <Link href={href} className="text-ash transition-colors hover:text-volt">
                   {label}
@@ -47,13 +50,15 @@ export default function Footer() {
         </nav>
 
         <div>
-          <h3 className="font-mono text-[10px] tracking-[0.3em] text-volt uppercase">HQ</h3>
+          <h3 className="font-mono text-[10px] tracking-[0.3em] text-volt uppercase">
+            {dict.hq}
+          </h3>
           <p className="mt-5 text-sm leading-relaxed text-ash">
-            14 Quai de la Charente
+            {dict.address1}
             <br />
-            75019 Paris, France
+            {dict.address2}
             <br />
-            <span className="text-smoke">ops@rapidoss.example</span>
+            <span className="text-smoke">{dict.email}</span>
           </p>
         </div>
       </div>
@@ -66,8 +71,8 @@ export default function Footer() {
 
       <div className="border-t border-edge">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-5 py-4 font-mono text-[10px] tracking-[0.2em] text-smoke uppercase sm:px-8">
-          <span>© 2026 RAPIDOSS LOGISTICS SAS</span>
-          <span>EVERY PARCEL ACCOUNTED FOR</span>
+          <span>{dict.copyright}</span>
+          <span>{dict.tagline}</span>
         </div>
       </div>
       <div className="hazard h-2" />

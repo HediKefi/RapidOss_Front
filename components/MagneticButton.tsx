@@ -61,7 +61,7 @@ export default function MagneticButton({
           aria-hidden
         />
         <span className="relative z-10">{children}</span>
-        <span className="relative z-10 transition-transform duration-300 group-hover:translate-x-1">
+        <span className="relative z-10 transition-transform duration-300 group-hover:translate-x-1 rtl:-scale-x-100 rtl:group-hover:-translate-x-1">
           →
         </span>
       </Link>

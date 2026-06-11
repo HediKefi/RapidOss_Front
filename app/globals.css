@@ -46,6 +46,16 @@ body {
   overflow-x: clip;
 }
 
+/* Arabic: swap the display face and neutralise letter-spacing,
+   which breaks cursive joining aesthetics */
+html[lang="ar"] {
+  --font-sans: var(--font-plex-arabic), "Noto Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+}
+
+html[lang="ar"] body * {
+  letter-spacing: 0 !important;
+}
+
 ::selection {
   background: var(--color-volt);
   color: #0a0a08;

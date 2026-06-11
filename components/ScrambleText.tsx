@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 const GLYPHS = "▮▯/\\|<>+=#01245789XKWZ";
+const GLYPHS_AR = "▮▯|=#٠١٢٤٥٧٨٩×؋";
+const ARABIC = /[؀-ۿ]/;
 
 /**
  * Decodes text character-by-character through a scramble of glyphs,
@@ -31,6 +33,7 @@ export default function ScrambleText({
     // initial state already renders the plain text — nothing to animate
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    const glyphs = ARABIC.test(text) ? GLYPHS_AR : GLYPHS;
     let frame = 0;
     let raf = 0;
     let last = 0;
@@ -47,7 +50,7 @@ export default function ScrambleText({
             out += ch;
           } else {
             settled = false;
-            out += GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+            out += glyphs[Math.floor(Math.random() * glyphs.length)];
           }
         }
         setOutput(out);
