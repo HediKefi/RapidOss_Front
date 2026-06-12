@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
@@ -26,11 +26,11 @@ function Wheel({
     // becomes a roll around the world X axis
     <group position={position} rotation={[0, 0, Math.PI / 2]}>
       <mesh ref={ref}>
-        <cylinderGeometry args={[0.27, 0.27, 0.2, 20]} />
+        <cylinderGeometry args={[0.29, 0.29, 0.22, 24]} />
         <meshStandardMaterial color={TIRE} roughness={0.9} />
       </mesh>
-      <mesh position={[0, 0.105, 0]}>
-        <cylinderGeometry args={[0.11, 0.11, 0.02, 12]} />
+      <mesh position={[0, 0.115, 0]}>
+        <cylinderGeometry args={[0.11, 0.11, 0.02, 16]} />
         <meshStandardMaterial color={VOLT} emissive={VOLT} emissiveIntensity={0.15} />
       </mesh>
     </group>
@@ -40,13 +40,13 @@ function Wheel({
 /** One ">" chevron of the side livery, pointing toward the front (+X). */
 function Chevron({ x, side }: { x: number; side: 1 | -1 }) {
   return (
-    <group position={[x, 0.78, side * 0.532]}>
-      <mesh position={[0, 0.09, 0]} rotation={[0, 0, -0.7]}>
-        <boxGeometry args={[0.26, 0.07, 0.012]} />
+    <group position={[x, 0.82, side * 0.6]}>
+      <mesh position={[0, 0.08, 0]} rotation={[0, 0, -0.7]}>
+        <boxGeometry args={[0.22, 0.06, 0.012]} />
         <meshStandardMaterial color={DARK} roughness={0.6} />
       </mesh>
-      <mesh position={[0, -0.09, 0]} rotation={[0, 0, 0.7]}>
-        <boxGeometry args={[0.26, 0.07, 0.012]} />
+      <mesh position={[0, -0.08, 0]} rotation={[0, 0, 0.7]}>
+        <boxGeometry args={[0.22, 0.06, 0.012]} />
         <meshStandardMaterial color={DARK} roughness={0.6} />
       </mesh>
     </group>
@@ -54,9 +54,10 @@ function Chevron({ x, side }: { x: number; side: 1 | -1 }) {
 }
 
 /**
- * Partner-class panel van — the RAPIDOSS fleet car. One-piece volt body
- * with a sloped hood and windshield, black livery band with double
- * chevrons, glass cab, rolling wheels. Front faces +X.
+ * Partner-class ludospace — the RAPIDOSS fleet car. A single smooth
+ * monovolume: the side profile (short rounded nose, raked windshield,
+ * gently curved roof, upright tail) is extruded with a deep bevel so
+ * every edge stays soft. Front faces +X.
  */
 export default function Van({ spin = true }: { spin?: boolean }) {
   const body = useRef<THREE.Group>(null);
@@ -67,88 +68,111 @@ export default function Van({ spin = true }: { spin?: boolean }) {
     body.current.position.y = Math.sin(state.clock.elapsedTime * 7) * 0.012;
   });
 
+  const bodyGeometry = useMemo(() => {
+    const s = new THREE.Shape();
+    s.moveTo(-1.28, 0.3);
+    // upright tail with a rounded roof corner
+    s.lineTo(-1.28, 0.98);
+    s.quadraticCurveTo(-1.28, 1.16, -1.0, 1.17);
+    // gently curved roof
+    s.quadraticCurveTo(-0.2, 1.22, 0.38, 1.16);
+    // long raked windshield flowing into the nose (monovolume, no step)
+    s.quadraticCurveTo(0.75, 1.08, 1.02, 0.72);
+    // short rounded nose
+    s.quadraticCurveTo(1.3, 0.52, 1.4, 0.42);
+    s.quadraticCurveTo(1.46, 0.36, 1.44, 0.3);
+    s.lineTo(-1.28, 0.3);
+
+    const g = new THREE.ExtrudeGeometry(s, {
+      depth: 0.96,
+      curveSegments: 24,
+      bevelEnabled: true,
+      bevelThickness: 0.1,
+      bevelSize: 0.09,
+      bevelSegments: 6,
+    });
+    g.translate(0, 0, -0.48);
+    return g;
+  }, []);
+
   return (
     <group>
       <group ref={body}>
-        {/* main body — continuous roofline like a small panel van */}
-        <RoundedBox args={[2.3, 1.0, 1.05]} radius={0.07} smoothness={3} position={[-0.15, 0.78, 0]}>
-          <meshStandardMaterial color={VOLT} roughness={0.45} metalness={0.15} />
-        </RoundedBox>
-        {/* hood, dropped and shorter */}
-        <RoundedBox args={[0.62, 0.42, 0.98]} radius={0.06} smoothness={3} position={[1.18, 0.5, 0]}>
-          <meshStandardMaterial color={VOLT} roughness={0.45} metalness={0.15} />
-        </RoundedBox>
-        {/* windshield slope joining hood to roof */}
-        <mesh position={[0.97, 0.93, 0]} rotation={[0, 0, -0.55]}>
-          <boxGeometry args={[0.05, 0.5, 0.9]} />
-          <meshStandardMaterial color={GLASS} roughness={0.15} metalness={0.7} />
+        {/* monovolume body shell */}
+        <mesh geometry={bodyGeometry}>
+          <meshStandardMaterial color={VOLT} roughness={0.35} metalness={0.2} />
         </mesh>
-        {/* cab side windows */}
-        <mesh position={[0.62, 0.98, 0]}>
-          <boxGeometry args={[0.62, 0.34, 1.06]} />
-          <meshStandardMaterial color={GLASS} roughness={0.15} metalness={0.7} />
+
+        {/* windshield following the rake */}
+        <mesh position={[0.78, 0.92, 0]} rotation={[0, 0, -0.74]}>
+          <boxGeometry args={[0.04, 0.52, 0.94]} />
+          <meshStandardMaterial color={GLASS} roughness={0.12} metalness={0.7} />
         </mesh>
-        {/* black livery band along the lower body */}
-        <mesh position={[-0.15, 0.42, 0]}>
-          <boxGeometry args={[2.31, 0.22, 1.06]} />
+        {/* cab side windows, rounded */}
+        <RoundedBox args={[0.78, 0.3, 1.18]} radius={0.05} smoothness={3} position={[0.18, 0.9, 0]}>
+          <meshStandardMaterial color={GLASS} roughness={0.12} metalness={0.7} />
+        </RoundedBox>
+        {/* rear window */}
+        <RoundedBox args={[0.06, 0.26, 0.68]} radius={0.025} smoothness={3} position={[-1.31, 0.92, 0]}>
+          <meshStandardMaterial color={GLASS} roughness={0.12} metalness={0.7} />
+        </RoundedBox>
+
+        {/* black livery band low on the body */}
+        <RoundedBox args={[2.52, 0.18, 1.21]} radius={0.04} smoothness={3} position={[-0.08, 0.43, 0]}>
           <meshStandardMaterial color={DARK} roughness={0.7} />
-        </mesh>
-        {/* double chevron brand mark on both panel sides */}
+        </RoundedBox>
+        {/* double chevron brand mark on the rear panels */}
         {([1, -1] as const).map((side) => (
           <group key={side}>
-            <Chevron x={-0.62} side={side} />
-            <Chevron x={-0.32} side={side} />
+            <Chevron x={-0.78} side={side} />
+            <Chevron x={-0.5} side={side} />
           </group>
         ))}
-        {/* sliding-door seam */}
+
+        {/* plastic bumpers, rounded */}
+        <RoundedBox args={[0.2, 0.2, 1.06]} radius={0.06} smoothness={3} position={[1.42, 0.34, 0]}>
+          <meshStandardMaterial color={TIRE} roughness={0.85} />
+        </RoundedBox>
+        <RoundedBox args={[0.16, 0.2, 1.06]} radius={0.06} smoothness={3} position={[-1.32, 0.34, 0]}>
+          <meshStandardMaterial color={TIRE} roughness={0.85} />
+        </RoundedBox>
+
+        {/* swept-back headlights on the nose corners */}
         {([1, -1] as const).map((side) => (
-          <mesh key={side} position={[0.18, 0.78, side * 0.528]}>
-            <boxGeometry args={[0.015, 0.62, 0.01]} />
-            <meshStandardMaterial color={DARK} roughness={0.6} />
-          </mesh>
-        ))}
-        {/* rear door seam */}
-        <mesh position={[-1.305, 0.78, 0]}>
-          <boxGeometry args={[0.012, 0.8, 0.96]} />
-          <meshStandardMaterial color={DARK} roughness={0.6} />
-        </mesh>
-        {/* front fascia + grille */}
-        <mesh position={[1.5, 0.42, 0]}>
-          <boxGeometry args={[0.06, 0.34, 0.96]} />
-          <meshStandardMaterial color={DARK} roughness={0.7} />
-        </mesh>
-        {/* chassis skirt */}
-        <mesh position={[0.05, 0.22, 0]}>
-          <boxGeometry args={[2.85, 0.18, 0.98]} />
-          <meshStandardMaterial color={TIRE} roughness={0.9} />
-        </mesh>
-        {/* headlights */}
-        {([-0.36, 0.36] as const).map((z) => (
-          <mesh key={z} position={[1.51, 0.58, z]}>
-            <boxGeometry args={[0.05, 0.09, 0.18]} />
+          <mesh
+            key={side}
+            position={[1.28, 0.52, side * 0.42]}
+            rotation={[0, side * -0.5, -0.25]}
+          >
+            <boxGeometry args={[0.05, 0.09, 0.26]} />
             <meshStandardMaterial color="#fff6cf" emissive="#ffe88a" emissiveIntensity={2.2} />
           </mesh>
         ))}
-        {/* tail lights */}
-        {([-0.4, 0.4] as const).map((z) => (
-          <mesh key={z} position={[-1.31, 0.6, z]}>
-            <boxGeometry args={[0.03, 0.16, 0.1]} />
+        {/* tail lights, vertical like the Partner's */}
+        {([1, -1] as const).map((side) => (
+          <mesh key={side} position={[-1.33, 0.72, side * 0.46]}>
+            <boxGeometry args={[0.03, 0.3, 0.09]} />
             <meshStandardMaterial color="#5c1410" emissive="#e03c2a" emissiveIntensity={1.4} />
           </mesh>
         ))}
         {/* mirrors */}
         {([1, -1] as const).map((side) => (
-          <mesh key={side} position={[0.95, 0.95, side * 0.58]}>
-            <boxGeometry args={[0.05, 0.1, 0.08]} />
+          <RoundedBox
+            key={side}
+            args={[0.05, 0.09, 0.07]}
+            radius={0.02}
+            smoothness={2}
+            position={[0.66, 0.95, side * 0.62]}
+          >
             <meshStandardMaterial color={DARK} roughness={0.6} />
-          </mesh>
+          </RoundedBox>
         ))}
       </group>
 
-      <Wheel position={[0.95, 0.27, 0.52]} spin={spin} />
-      <Wheel position={[0.95, 0.27, -0.52]} spin={spin} />
-      <Wheel position={[-0.85, 0.27, 0.52]} spin={spin} />
-      <Wheel position={[-0.85, 0.27, -0.52]} spin={spin} />
+      <Wheel position={[0.9, 0.29, 0.52]} spin={spin} />
+      <Wheel position={[0.9, 0.29, -0.52]} spin={spin} />
+      <Wheel position={[-0.82, 0.29, 0.52]} spin={spin} />
+      <Wheel position={[-0.82, 0.29, -0.52]} spin={spin} />
     </group>
   );
 }
