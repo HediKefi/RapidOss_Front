@@ -60,7 +60,17 @@ export default async function RootLayout({
       lang={locale}
       dir={localeDir[locale]}
       className={`${grotesk.variable} ${plexMono.variable} ${plexArabic.variable} h-full`}
+      suppressHydrationWarning
     >
+      <head>
+        {/* apply the persisted theme before first paint to avoid a flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('theme')==='light')document.documentElement.dataset.theme='light'}catch(e){}",
+          }}
+        />
+      </head>
       <body className="flex min-h-full flex-col">
         <Nav locale={locale} dict={dict.nav} />
         <main className="flex-1">{children}</main>

@@ -36,6 +36,23 @@
 
 html {
   scroll-behavior: smooth;
+  --grid-line: rgb(237 234 223 / 0.035);
+}
+
+/* ---- light theme ---- */
+html[data-theme="light"] {
+  --color-void: #f4f1e6;
+  --color-carbon: #ece8d9;
+  --color-panel: #faf7ec;
+  --color-edge: #d9d4bf;
+  --color-edge-hi: #b3ac8f;
+  --color-volt: #c79b00;
+  --color-volt-hot: #ae8800;
+  --color-volt-dim: #e6cd55;
+  --color-bone: #181610;
+  --color-ash: #5d5949;
+  --color-smoke: #8d8773;
+  --grid-line: rgb(24 22 16 / 0.06);
 }
 
 body {
@@ -78,8 +95,8 @@ html[lang="ar"] body * {
 
 .grid-lines {
   background-image:
-    linear-gradient(to right, rgb(237 234 223 / 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(237 234 223 / 0.035) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 72px 72px;
 }
 

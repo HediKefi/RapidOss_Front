@@ -7,8 +7,36 @@ import { AnimatePresence, motion } from "framer-motion";
 import Logo from "./Logo";
 import { locales, localeNames, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { useTheme, toggleTheme } from "@/lib/theme";
 
 const LOGIN_URL = "https://rapidoss.loxbox.tn";
+
+function ThemeToggle({ dict }: { dict: Dictionary["nav"] }) {
+  const theme = useTheme();
+  const label = theme === "dark" ? dict.themeLight : dict.themeDark;
+
+  return (
+    <button
+      onClick={toggleTheme}
+      aria-label={label}
+      title={label}
+      className="grid h-8 w-8 place-items-center border border-edge text-ash transition-colors hover:border-volt hover:text-volt"
+    >
+      {theme === "dark" ? (
+        // sun
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <circle cx="12" cy="12" r="4.2" />
+          <path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7" />
+        </svg>
+      ) : (
+        // moon
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z" />
+        </svg>
+      )}
+    </button>
+  );
+}
 
 function LangSwitcher({ locale, className = "" }: { locale: Locale; className?: string }) {
   const pathname = usePathname();
@@ -112,6 +140,7 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
               {dict.login}
             </a>
             <LangSwitcher locale={locale} />
+            <ThemeToggle dict={dict} />
           </div>
 
           <button
@@ -179,7 +208,10 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
                 >
                   {dict.login}
                 </a>
-                <LangSwitcher locale={locale} />
+                <div className="flex items-center gap-3">
+                  <LangSwitcher locale={locale} />
+                  <ThemeToggle dict={dict} />
+                </div>
               </motion.div>
               <motion.p
                 initial={{ opacity: 0 }}

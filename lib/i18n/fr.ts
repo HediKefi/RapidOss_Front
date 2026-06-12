@@ -17,6 +17,8 @@ const fr: Dictionary = {
     becomeCourier: "Devenir livreur",
     login: "Se connecter",
     tagline: "Rapide. Fiable. Humain. — Tunis",
+    themeLight: "Passer en mode clair",
+    themeDark: "Passer en mode sombre",
     openMenu: "Ouvrir le menu",
     closeMenu: "Fermer le menu",
     home: "Accueil RAPIDOSS",
@@ -226,6 +228,7 @@ const fr: Dictionary = {
     kicker: "Rejoindre la flotte",
     title: "FORMULAIRE LIVREUR",
     lede: "Veuillez remplir le formulaire pour devenir livreur. Des tournées régulières, une paie hebdomadaire, un dispatch qui répond — et du respect pour ceux qui font les kilomètres.",
+    fleetCam: "Caméra flotte — unité 07 en tournée",
     perks: [
       ["TOURNÉES", "Régulières, planifiées la veille au soir"],
       ["PAIE", "Hebdomadaire, tarifs à l'arrêt transparents"],

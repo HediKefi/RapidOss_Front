@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "@/lib/theme";
 
-const HeroScene = dynamic(() => import("./three/HeroScene"), {
+const VanScene = dynamic(() => import("./three/VanScene"), {
   ssr: false,
   loading: () => null,
 });
@@ -20,14 +20,14 @@ function subscribe(onChange: () => void) {
 const getSnapshot = () => window.matchMedia(QUERY).matches;
 const getServerSnapshot = () => false;
 
-/** Client-side mount point for the WebGL hero — keeps three.js out of SSR. */
-export default function Hero3D({ className = "" }: { className?: string }) {
+/** Client mount point for the fleet-van WebGL scene. */
+export default function Van3D({ className = "" }: { className?: string }) {
   const reduced = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const theme = useTheme();
 
   return (
     <div className={className} aria-hidden>
-      <HeroScene reduced={reduced} light={theme === "light"} />
+      <VanScene reduced={reduced} light={theme === "light"} />
     </div>
   );
 }

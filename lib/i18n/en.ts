@@ -15,6 +15,8 @@ const en = {
     becomeCourier: "Become a courier",
     login: "Log in",
     tagline: "Fast. Reliable. Human. — Tunis",
+    themeLight: "Switch to light mode",
+    themeDark: "Switch to dark mode",
     openMenu: "Open menu",
     closeMenu: "Close menu",
     home: "RAPIDOSS home",
@@ -224,6 +226,7 @@ const en = {
     kicker: "Join the fleet",
     title: "COURIER FORM",
     lede: "Please fill in the form to become a courier. Steady routes, weekly pay, a dispatch desk that answers — and respect for the people who do the kilometres.",
+    fleetCam: "Fleet cam — unit 07 rolling",
     perks: [
       ["ROUTES", "Steady, planned the evening before"],
       ["PAY", "Weekly, per-stop transparent rates"],

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useTheme } from "@/lib/theme";
 
 interface Node {
   x: number; // 0..1
@@ -54,6 +55,7 @@ const VOLT = "#f5c400";
 
 export default function RouteCanvas({ className = "" }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const theme = useTheme();
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -62,6 +64,10 @@ export default function RouteCanvas({ className = "" }: { className?: string }) 
     if (!ctx) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // ink for routes/relays flips with the theme; volt stays volt
+    const ink = theme === "light" ? "24,22,16" : "237,234,223";
+    const routeAlpha = theme === "light" ? 0.12 : 0.07;
+    const nodeAlpha = theme === "light" ? 0.5 : 0.45;
 
     let w = 0;
     let h = 0;
@@ -130,7 +136,7 @@ export default function RouteCanvas({ className = "" }: { className?: string }) 
         const b = pos(NODES[route.b], NODES[route.b].hub ? 0.6 : 1);
         const mx = (a.x + b.x) / 2;
         const my = (a.y + b.y) / 2 + route.bend * h * 2.2;
-        ctx.strokeStyle = "rgba(237,234,223,0.07)";
+        ctx.strokeStyle = `rgba(${ink},${routeAlpha})`;
         ctx.setLineDash([3, 7]);
         ctx.lineDashOffset = reduced ? 0 : -time * 14;
         ctx.beginPath();
@@ -181,7 +187,7 @@ export default function RouteCanvas({ className = "" }: { className?: string }) 
           ctx.stroke();
           ctx.fillStyle = VOLT;
         } else {
-          ctx.fillStyle = "rgba(237,234,223,0.45)";
+          ctx.fillStyle = `rgba(${ink},${nodeAlpha})`;
         }
         ctx.beginPath();
         ctx.arc(x, y, n.r, 0, Math.PI * 2);
@@ -213,7 +219,7 @@ export default function RouteCanvas({ className = "" }: { className?: string }) 
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMouse);
     };
-  }, []);
+  }, [theme]);
 
   return <canvas ref={canvasRef} className={className} aria-hidden />;
 }

@@ -24,8 +24,14 @@ phones, email), Facebook/Instagram links and the suggestions box.
 
 - **`components/three/HeroScene.tsx`** — react-three-fiber hero: a rotating
   parcel with volt straps and glowing edges, floating satellite boxes
-  (solid + wireframe), volt sparkles, an infinite grid floor and a
-  mouse-parallax camera rig. Loaded client-side only (`next/dynamic`).
+  (solid + wireframe), volt sparkles, an infinite grid floor, a
+  mouse-parallax camera rig — and the **fleet van** driving across the
+  grid on a loop. Loaded client-side only (`next/dynamic`).
+- **`components/three/Van.tsx`** — low-poly RAPIDOSS delivery van built
+  from primitives: volt cargo box with a black brand band, dark cab,
+  emissive head/tail lights, rolling wheels and suspension bob. Featured
+  in the home hero and in the "fleet cam" panel on `/devenir-livreur`
+  (`VanScene`, where the floor scrolls under the van to read as driving).
 - **`components/TiltCard.tsx`** — 3D cursor-tilt on the service cards with
   a tracking glare (fine pointers only).
 - **`components/Reveal.tsx`** — scroll reveals, including a `swing` variant
@@ -34,6 +40,16 @@ phones, email), Facebook/Instagram links and the suggestions box.
 - Scramble-text headlines, in-view counters, marquees, magnetic CTAs.
 - Everything respects `prefers-reduced-motion` (the 3D scene drops to a
   static frame).
+
+## Dark / light mode
+
+Dark is the default; a toggle in the nav switches to a paper-toned light
+theme. The theme is a `data-theme="light"` attribute on `<html>`,
+persisted in `localStorage` and applied by an inline script before first
+paint (no flash). All design tokens are CSS variables, so Tailwind
+utilities adapt at runtime; volt shifts to a darker amber in light mode
+for contrast. The WebGL scenes (fog, grid, sparkles) and the 2D route
+canvas re-tint per theme via the `useTheme()` store (`lib/theme.ts`).
 
 ## Internationalisation
 

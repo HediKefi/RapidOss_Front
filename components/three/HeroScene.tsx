@@ -4,10 +4,12 @@ import { useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges, Float, Grid, Sparkles } from "@react-three/drei";
 import * as THREE from "three";
+import Van from "./Van";
 
 const VOLT = "#f5c400";
 const CARDBOARD = "#191712";
-const DARK = "#0c0b09";
+const FOG_DARK = "#0c0b09";
+const FOG_LIGHT = "#e7e3d3";
 
 /** The hero parcel: dark carton with two volt straps and glowing edges. */
 function Parcel() {
@@ -102,6 +104,23 @@ function Satellites() {
   );
 }
 
+/** The fleet van crossing the grid floor on a loop. */
+function DrivingVan({ moving }: { moving: boolean }) {
+  const ref = useRef<THREE.Group>(null);
+
+  useFrame((state) => {
+    if (!ref.current || !moving) return;
+    // -12 → +12 loop; fog swallows it at both ends
+    ref.current.position.x = ((state.clock.elapsedTime * 3.2) % 24) - 12;
+  });
+
+  return (
+    <group ref={ref} position={[-3.5, -2.1, 1.7]} scale={0.62}>
+      <Van spin={moving} />
+    </group>
+  );
+}
+
 /** Eases the camera toward the pointer for a parallax feel. */
 function CameraRig() {
   useFrame((state) => {
@@ -113,7 +132,13 @@ function CameraRig() {
   return null;
 }
 
-export default function HeroScene({ reduced = false }: { reduced?: boolean }) {
+export default function HeroScene({
+  reduced = false,
+  light = false,
+}: {
+  reduced?: boolean;
+  light?: boolean;
+}) {
   return (
     <Canvas
       camera={{ position: [0, 0.7, 7.2], fov: 38 }}
@@ -122,8 +147,8 @@ export default function HeroScene({ reduced = false }: { reduced?: boolean }) {
       gl={{ antialias: true, alpha: true }}
       aria-hidden
     >
-      <fog attach="fog" args={[DARK, 9, 18]} />
-      <ambientLight intensity={0.5} />
+      <fog attach="fog" args={[light ? FOG_LIGHT : FOG_DARK, 9, 18]} />
+      <ambientLight intensity={light ? 0.9 : 0.5} />
       <directionalLight position={[4, 6, 5]} intensity={1.1} color="#fff7df" />
       <pointLight position={[-5, 2, -3]} intensity={14} color={VOLT} />
 
@@ -131,14 +156,15 @@ export default function HeroScene({ reduced = false }: { reduced?: boolean }) {
         <Parcel />
       </group>
       <Satellites />
+      <DrivingVan moving={!reduced} />
 
       <Sparkles
         count={70}
         scale={[14, 6, 8]}
         size={1.6}
         speed={reduced ? 0 : 0.35}
-        opacity={0.5}
-        color={VOLT}
+        opacity={light ? 0.8 : 0.5}
+        color={light ? "#9a7a00" : VOLT}
       />
 
       <Grid
@@ -146,10 +172,10 @@ export default function HeroScene({ reduced = false }: { reduced?: boolean }) {
         args={[30, 30]}
         cellSize={0.8}
         cellThickness={0.45}
-        cellColor="#2a281f"
+        cellColor={light ? "#b9b29a" : "#2a281f"}
         sectionSize={4}
         sectionThickness={1}
-        sectionColor={VOLT}
+        sectionColor={light ? "#c79b00" : VOLT}
         fadeDistance={22}
         fadeStrength={2.5}
         infiniteGrid
