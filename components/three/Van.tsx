@@ -2,12 +2,13 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Edges } from "@react-three/drei";
+import { RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 
 const VOLT = "#f5c400";
 const DARK = "#16140f";
 const TIRE = "#0c0b09";
+const GLASS = "#22201a";
 
 function Wheel({
   position,
@@ -25,20 +26,37 @@ function Wheel({
     // becomes a roll around the world X axis
     <group position={position} rotation={[0, 0, Math.PI / 2]}>
       <mesh ref={ref}>
-        <cylinderGeometry args={[0.3, 0.3, 0.22, 18]} />
+        <cylinderGeometry args={[0.27, 0.27, 0.2, 20]} />
         <meshStandardMaterial color={TIRE} roughness={0.9} />
       </mesh>
-      <mesh position={[0, 0.115, 0]} rotation={[0, 0, 0]}>
-        <cylinderGeometry args={[0.13, 0.13, 0.02, 12]} />
+      <mesh position={[0, 0.105, 0]}>
+        <cylinderGeometry args={[0.11, 0.11, 0.02, 12]} />
         <meshStandardMaterial color={VOLT} emissive={VOLT} emissiveIntensity={0.15} />
       </mesh>
     </group>
   );
 }
 
+/** One ">" chevron of the side livery, pointing toward the front (+X). */
+function Chevron({ x, side }: { x: number; side: 1 | -1 }) {
+  return (
+    <group position={[x, 0.78, side * 0.532]}>
+      <mesh position={[0, 0.09, 0]} rotation={[0, 0, -0.7]}>
+        <boxGeometry args={[0.26, 0.07, 0.012]} />
+        <meshStandardMaterial color={DARK} roughness={0.6} />
+      </mesh>
+      <mesh position={[0, -0.09, 0]} rotation={[0, 0, 0.7]}>
+        <boxGeometry args={[0.26, 0.07, 0.012]} />
+        <meshStandardMaterial color={DARK} roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
 /**
- * Low-poly RAPIDOSS delivery van: volt cargo box, dark cab,
- * glowing headlights and rolling wheels. Front faces +X.
+ * Partner-class panel van — the RAPIDOSS fleet car. One-piece volt body
+ * with a sloped hood and windshield, black livery band with double
+ * chevrons, glass cab, rolling wheels. Front faces +X.
  */
 export default function Van({ spin = true }: { spin?: boolean }) {
   const body = useRef<THREE.Group>(null);
@@ -52,57 +70,85 @@ export default function Van({ spin = true }: { spin?: boolean }) {
   return (
     <group>
       <group ref={body}>
-        {/* cargo box */}
-        <mesh position={[-0.55, 0.78, 0]}>
-          <boxGeometry args={[1.9, 1.15, 1.05]} />
-          <meshStandardMaterial color={VOLT} roughness={0.55} metalness={0.1} />
-          <Edges scale={1.001} color={DARK} />
+        {/* main body — continuous roofline like a small panel van */}
+        <RoundedBox args={[2.3, 1.0, 1.05]} radius={0.07} smoothness={3} position={[-0.15, 0.78, 0]}>
+          <meshStandardMaterial color={VOLT} roughness={0.45} metalness={0.15} />
+        </RoundedBox>
+        {/* hood, dropped and shorter */}
+        <RoundedBox args={[0.62, 0.42, 0.98]} radius={0.06} smoothness={3} position={[1.18, 0.5, 0]}>
+          <meshStandardMaterial color={VOLT} roughness={0.45} metalness={0.15} />
+        </RoundedBox>
+        {/* windshield slope joining hood to roof */}
+        <mesh position={[0.97, 0.93, 0]} rotation={[0, 0, -0.55]}>
+          <boxGeometry args={[0.05, 0.5, 0.9]} />
+          <meshStandardMaterial color={GLASS} roughness={0.15} metalness={0.7} />
         </mesh>
-        {/* black brand band on the cargo box */}
-        <mesh position={[-0.55, 0.62, 0]}>
-          <boxGeometry args={[1.91, 0.26, 1.06]} />
+        {/* cab side windows */}
+        <mesh position={[0.62, 0.98, 0]}>
+          <boxGeometry args={[0.62, 0.34, 1.06]} />
+          <meshStandardMaterial color={GLASS} roughness={0.15} metalness={0.7} />
+        </mesh>
+        {/* black livery band along the lower body */}
+        <mesh position={[-0.15, 0.42, 0]}>
+          <boxGeometry args={[2.31, 0.22, 1.06]} />
           <meshStandardMaterial color={DARK} roughness={0.7} />
         </mesh>
-        {/* cab */}
-        <mesh position={[0.78, 0.6, 0]}>
-          <boxGeometry args={[0.85, 0.78, 1.0]} />
-          <meshStandardMaterial color={DARK} roughness={0.65} />
-          <Edges scale={1.001} color={VOLT} />
+        {/* double chevron brand mark on both panel sides */}
+        {([1, -1] as const).map((side) => (
+          <group key={side}>
+            <Chevron x={-0.62} side={side} />
+            <Chevron x={-0.32} side={side} />
+          </group>
+        ))}
+        {/* sliding-door seam */}
+        {([1, -1] as const).map((side) => (
+          <mesh key={side} position={[0.18, 0.78, side * 0.528]}>
+            <boxGeometry args={[0.015, 0.62, 0.01]} />
+            <meshStandardMaterial color={DARK} roughness={0.6} />
+          </mesh>
+        ))}
+        {/* rear door seam */}
+        <mesh position={[-1.305, 0.78, 0]}>
+          <boxGeometry args={[0.012, 0.8, 0.96]} />
+          <meshStandardMaterial color={DARK} roughness={0.6} />
         </mesh>
-        {/* windshield */}
-        <mesh position={[1.18, 0.7, 0]} rotation={[0, 0, -0.22]}>
-          <boxGeometry args={[0.06, 0.45, 0.88]} />
-          <meshStandardMaterial color="#2c2a20" roughness={0.2} metalness={0.6} />
+        {/* front fascia + grille */}
+        <mesh position={[1.5, 0.42, 0]}>
+          <boxGeometry args={[0.06, 0.34, 0.96]} />
+          <meshStandardMaterial color={DARK} roughness={0.7} />
         </mesh>
-        {/* chassis */}
-        <mesh position={[0.1, 0.22, 0]}>
-          <boxGeometry args={[2.6, 0.18, 0.95]} />
+        {/* chassis skirt */}
+        <mesh position={[0.05, 0.22, 0]}>
+          <boxGeometry args={[2.85, 0.18, 0.98]} />
           <meshStandardMaterial color={TIRE} roughness={0.9} />
         </mesh>
         {/* headlights */}
-        {([-0.34, 0.34] as const).map((z) => (
-          <mesh key={z} position={[1.225, 0.42, z]}>
-            <boxGeometry args={[0.04, 0.1, 0.16]} />
-            <meshStandardMaterial
-              color="#fff6cf"
-              emissive="#ffe88a"
-              emissiveIntensity={2.2}
-            />
+        {([-0.36, 0.36] as const).map((z) => (
+          <mesh key={z} position={[1.51, 0.58, z]}>
+            <boxGeometry args={[0.05, 0.09, 0.18]} />
+            <meshStandardMaterial color="#fff6cf" emissive="#ffe88a" emissiveIntensity={2.2} />
           </mesh>
         ))}
         {/* tail lights */}
-        {([-0.36, 0.36] as const).map((z) => (
-          <mesh key={z} position={[-1.51, 0.5, z]}>
-            <boxGeometry args={[0.03, 0.12, 0.12]} />
+        {([-0.4, 0.4] as const).map((z) => (
+          <mesh key={z} position={[-1.31, 0.6, z]}>
+            <boxGeometry args={[0.03, 0.16, 0.1]} />
             <meshStandardMaterial color="#5c1410" emissive="#e03c2a" emissiveIntensity={1.4} />
+          </mesh>
+        ))}
+        {/* mirrors */}
+        {([1, -1] as const).map((side) => (
+          <mesh key={side} position={[0.95, 0.95, side * 0.58]}>
+            <boxGeometry args={[0.05, 0.1, 0.08]} />
+            <meshStandardMaterial color={DARK} roughness={0.6} />
           </mesh>
         ))}
       </group>
 
-      <Wheel position={[0.78, 0.3, 0.52]} spin={spin} />
-      <Wheel position={[0.78, 0.3, -0.52]} spin={spin} />
-      <Wheel position={[-1.0, 0.3, 0.52]} spin={spin} />
-      <Wheel position={[-1.0, 0.3, -0.52]} spin={spin} />
+      <Wheel position={[0.95, 0.27, 0.52]} spin={spin} />
+      <Wheel position={[0.95, 0.27, -0.52]} spin={spin} />
+      <Wheel position={[-0.85, 0.27, 0.52]} spin={spin} />
+      <Wheel position={[-0.85, 0.27, -0.52]} spin={spin} />
     </group>
   );
 }
