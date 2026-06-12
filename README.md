@@ -1,27 +1,59 @@
 # RAPIDOSS — Front
 
-Marketing & operations front-end for RAPIDOSS, a Tunisian delivery company
-that runs e-commerce logistics end to end: express pickup, 24h Grand Tunis /
-48h nationwide delivery, cash-on-delivery management and marketing support.
-Content inspired by [rapidoss.tn](https://rapidoss.tn/).
+A futuristic recreation of [rapidoss.tn](https://rapidoss.tn/), the Tunisian
+delivery company — same information architecture, content and pages as the
+original site, redesigned with real-time 3D, scroll motions and page
+transitions. Black & yellow, industrial-futuristic.
 
-Built with **Next.js 16** (App Router), **Tailwind CSS v4** and
-**Framer Motion**. Brand: black & yellow, industrial-futuristic.
+Built with **Next.js 16** (App Router), **Tailwind CSS v4**,
+**Framer Motion** and **three.js / react-three-fiber**.
+
+## Site map (mirrors rapidoss.tn)
+
+| Route               | Recreates                                                              |
+| ------------------- | ---------------------------------------------------------------------- |
+| `/{locale}`         | Their one-pager: hero "Simplement. Rapidement. Livré chez vous", the 4 services (Pickups, Livraison, Paiement, Marketing), the 3 Engagements, "Plus qu'une société, une famille !" with their 3 slogans, Accompagnement marketing, the Devis form (Tunisian city dropdown), stats 24H / +150 / 92%, partner logos, "Suivre mon colis" |
+| `/{locale}/devenir-livreur` | Their `devenir-livreur.html` courier application form              |
+| `/{locale}/track`   | Full tracking experience built on their real status pipeline: Préparation → Préparé → Livraison → Livré, with En Retour → Retourné and Annulé branches |
+| "Se Connecter"      | Links out to their portal at rapidoss.loxbox.tn                        |
+
+Footer carries their real contact block (Rue de la Pépinière El Agba,
+phones, email), Facebook/Instagram links and the suggestions box.
+
+## 3D & motion
+
+- **`components/three/HeroScene.tsx`** — react-three-fiber hero: a rotating
+  parcel with volt straps and glowing edges, floating satellite boxes
+  (solid + wireframe), volt sparkles, an infinite grid floor and a
+  mouse-parallax camera rig. Loaded client-side only (`next/dynamic`).
+- **`components/TiltCard.tsx`** — 3D cursor-tilt on the service cards with
+  a tracking glare (fine pointers only).
+- **`components/Reveal.tsx`** — scroll reveals, including a `swing` variant
+  that racks sections in with perspective rotation.
+- **`app/[locale]/template.tsx`** — yellow shutter wipe between routes.
+- Scramble-text headlines, in-view counters, marquees, magnetic CTAs.
+- Everything respects `prefers-reduced-motion` (the 3D scene drops to a
+  static frame).
 
 ## Internationalisation
 
-Three locales — **French** (default), **English** and **Arabic** — served
-under locale-prefixed routes (`/fr`, `/en`, `/ar`):
+Three locales — **French** (default), **English** and **Arabic** — under
+locale-prefixed routes (`/fr`, `/en`, `/ar`):
 
-- `middleware.ts` redirects bare paths to the visitor's preferred locale
-  (Accept-Language detection, falling back to `fr`).
+- `middleware.ts` redirects bare paths using Accept-Language detection.
 - Dictionaries live in `lib/i18n/{en,fr,ar}.ts`; the English file is the
   canonical shape and the other locales are type-checked against it.
-- Arabic renders fully **RTL** (`dir="rtl"`) with IBM Plex Sans Arabic,
-  mirrored directional UI (logical CSS properties + `rtl:` variants) and
-  letter-spacing neutralised for cursive script. Mechanical geometry
-  (marquees, progress bars, waybill codes) stays pinned LTR.
-- All 15 locale pages are statically prerendered via `generateStaticParams`.
+- Arabic renders fully **RTL** with IBM Plex Sans Arabic, mirrored
+  directional UI and Arabic scramble glyphs; mechanical geometry
+  (marquees, progress bars, tracking codes) stays pinned LTR.
+
+## Tracking demo
+
+`lib/tracking.ts` generates parcels deterministically (FNV-1a hash →
+seeded PRNG) from the tracking number — same number, same journey, no
+backend. Each number resolves to a delivered, returned or cancelled
+journey along the real RAPIDOSS status pipeline, with localized
+timestamps and a COD amount in dinars. Try `RX-` + any 6 digits.
 
 ## Run it
 
@@ -31,35 +63,3 @@ npm run dev      # http://localhost:3000
 npm run build    # production build
 npm run lint
 ```
-
-## Pages
-
-| Route       | What it does                                                              |
-| ----------- | ------------------------------------------------------------------------- |
-| `/`         | Hero with live route-network canvas, scramble headlines, stats, services  |
-| `/services` | The five operating modes with spec sheets                                 |
-| `/network`  | Live network telemetry panel, aggregate counters, hub manifest table      |
-| `/track`    | Interactive waybill tracking demo (try any `RX-` + 6 digits)              |
-| `/contact`  | Quote request form with validation and animated confirmation              |
-| `*`         | Custom 404 ("routing exception")                                          |
-
-## Notable mechanics
-
-- **`components/RouteCanvas.tsx`** — hand-rolled `<canvas>` network: bezier
-  trunk routes, packets with light trails, pulsing hubs, mouse parallax.
-- **`lib/tracking.ts`** — deterministic shipment generator (FNV-1a hash →
-  seeded PRNG), so the same waybill always replays the same journey without
-  a backend.
-- **`components/ScrambleText.tsx`** — split-flap style text decode on the
-  headlines.
-- **`app/template.tsx`** — yellow shutter wipe between route transitions.
-- Magnetic CTA buttons, scroll-reveal sections, in-view counters, CSS
-  marquees, full-screen staggered mobile menu.
-- All animation respects `prefers-reduced-motion`.
-
-## Design tokens
-
-Defined in `app/globals.css` under `@theme` — `volt` (yellow `#f5c400`),
-`void`/`carbon`/`panel` (blacks), `bone`/`ash`/`smoke` (warm greys), plus
-utilities for hazard stripes, blueprint grid lines and notched clip paths.
-Fonts: Space Grotesk (display) and IBM Plex Mono (data), via `next/font`.

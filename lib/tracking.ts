@@ -1,30 +1,36 @@
 /**
- * Deterministic shipment generator for the tracking demo.
- * The same tracking code always resolves to the same shipment,
- * so the demo behaves like a real lookup service without a backend.
- * All human-readable labels are resolved from the i18n dictionary
- * by the UI — this module only deals in stable keys.
+ * Deterministic parcel generator for the tracking demo.
+ * The same tracking number always resolves to the same parcel, so the
+ * demo behaves like a real lookup service without a backend.
+ *
+ * Statuses mirror the real RAPIDOSS pipeline:
+ * Préparation → Préparé → Livraison → Livré
+ *                          └→ En Retour → Retourné
+ * Préparation → Annulé
+ *
+ * All human-readable labels are resolved from the i18n dictionary by
+ * the UI — this module only deals in stable keys.
  */
 
-export type ShipmentStage =
-  | "REGISTERED"
-  | "PICKED_UP"
-  | "AT_HUB"
-  | "LINE_HAUL"
-  | "OUT_FOR_DELIVERY"
-  | "DELIVERED";
+export type TrackStatus =
+  | "PREPARATION"
+  | "PREPARE"
+  | "LIVRAISON"
+  | "LIVRE"
+  | "EN_RETOUR"
+  | "RETOURNE"
+  | "ANNULE";
 
-export const STAGES: ShipmentStage[] = [
-  "REGISTERED",
-  "PICKED_UP",
-  "AT_HUB",
-  "LINE_HAUL",
-  "OUT_FOR_DELIVERY",
-  "DELIVERED",
-];
+export type Outcome = "delivered" | "returned" | "cancelled";
+
+const PATHS: Record<Outcome, TrackStatus[]> = {
+  delivered: ["PREPARATION", "PREPARE", "LIVRAISON", "LIVRE"],
+  returned: ["PREPARATION", "PREPARE", "LIVRAISON", "EN_RETOUR", "RETOURNE"],
+  cancelled: ["PREPARATION", "ANNULE"],
+};
 
 export interface TimelineEvent {
-  stage: ShipmentStage;
+  status: TrackStatus;
   location: string;
   timestamp: string;
   done: boolean;
@@ -35,33 +41,36 @@ export interface Shipment {
   code: string;
   origin: string;
   destination: string;
+  outcome: Outcome;
+  path: TrackStatus[];
   serviceIdx: number; // index into dict.trackPage.serviceNames
   weightKg: string;
   codDt: number; // cash to collect on delivery, in dinars
   pieces: number;
   stageIndex: number;
-  progress: number; // 0..1 across whole journey
-  eta: string | null; // null = completed
+  terminal: boolean; // journey closed (delivered / returned / cancelled)
+  progress: number; // 0..1 along the path
+  eta: string | null; // null when the journey is closed
   events: TimelineEvent[];
 }
 
-// Relay codes stay in Latin script across locales, like flight codes.
-const HUBS = [
-  "TUNIS TUN-1",
-  "ARIANA ARN-2",
-  "BEN AROUS BNA-3",
-  "NABEUL NBL-4",
-  "BIZERTE BZT-5",
-  "SOUSSE SUS-6",
-  "MONASTIR MNS-7",
-  "SFAX SFX-8",
-  "KAIROUAN KRN-9",
-  "GABÈS GBS-10",
-  "MÉDENINE MDN-11",
-  "TOZEUR TZR-12",
+// City tags stay in Latin script across locales, like flight codes.
+const CITIES = [
+  "TUNIS TN-01",
+  "ARIANA AR-02",
+  "BEN AROUS BA-03",
+  "MANOUBA MN-04",
+  "NABEUL NB-05",
+  "BIZERTE BZ-06",
+  "SOUSSE SS-07",
+  "MONASTIR MS-08",
+  "SFAX SF-09",
+  "KAIROUAN KR-10",
+  "GABÈS GB-11",
+  "MÉDENINE MD-12",
 ];
 
-export const SERVICE_COUNT = 5;
+export const SERVICE_COUNT = 4;
 
 export const TRACKING_PATTERN = /^RX-?\d{6}$/i;
 
@@ -108,41 +117,59 @@ export function lookupShipment(rawCode: string, locale: string): Shipment {
   const code = normalizeCode(rawCode);
   const rand = mulberry32(hash(code));
 
-  const originIdx = Math.floor(rand() * HUBS.length);
-  let destIdx = Math.floor(rand() * HUBS.length);
-  if (destIdx === originIdx) destIdx = (destIdx + 1) % HUBS.length;
+  const originIdx = Math.floor(rand() * CITIES.length);
+  let destIdx = Math.floor(rand() * CITIES.length);
+  if (destIdx === originIdx) destIdx = (destIdx + 1) % CITIES.length;
 
-  const stageIndex = Math.floor(rand() * STAGES.length);
-  const stepHours = 3 + rand() * 9;
+  const outcomeRoll = rand();
+  const outcome: Outcome =
+    outcomeRoll < 0.68 ? "delivered" : outcomeRoll < 0.88 ? "returned" : "cancelled";
+  const path = PATHS[outcome];
+
+  const stageIndex = Math.floor(rand() * path.length);
+  const terminal = stageIndex === path.length - 1;
+  const stepHours = 4 + rand() * 10;
   const start = new Date(Date.now() - stageIndex * stepHours * 3_600_000);
 
-  const events: TimelineEvent[] = STAGES.map((stage, i) => {
-    const t = new Date(start.getTime() + i * stepHours * 3_600_000);
-    const midpoints = [originIdx, originIdx, originIdx, destIdx, destIdx, destIdx];
-    return {
-      stage,
-      location: HUBS[midpoints[i]],
-      timestamp: i <= stageIndex ? fmt(t, locale) : "—",
-      done: i < stageIndex,
-      current: i === stageIndex,
-    };
-  });
+  // where each status physically happens along the journey
+  const placeFor = (status: TrackStatus): string => {
+    switch (status) {
+      case "PREPARATION":
+      case "PREPARE":
+      case "ANNULE":
+      case "RETOURNE":
+        return CITIES[originIdx];
+      default:
+        return CITIES[destIdx];
+    }
+  };
 
-  const eta =
-    stageIndex >= STAGES.length - 1
-      ? null
-      : fmt(new Date(start.getTime() + (STAGES.length - 1) * stepHours * 3_600_000), locale);
+  const events: TimelineEvent[] = path.map((status, i) => ({
+    status,
+    location: placeFor(status),
+    timestamp:
+      i <= stageIndex ? fmt(new Date(start.getTime() + i * stepHours * 3_600_000), locale) : "—",
+    done: i < stageIndex,
+    current: i === stageIndex,
+  }));
+
+  const eta = terminal
+    ? null
+    : fmt(new Date(start.getTime() + (path.length - 1) * stepHours * 3_600_000), locale);
 
   return {
     code,
-    origin: HUBS[originIdx],
-    destination: HUBS[destIdx],
+    origin: CITIES[originIdx],
+    destination: CITIES[destIdx],
+    outcome,
+    path,
     serviceIdx: Math.floor(rand() * SERVICE_COUNT),
-    weightKg: (0.4 + rand() * 38).toFixed(1),
+    weightKg: (0.4 + rand() * 28).toFixed(1),
     codDt: Math.round(15 + rand() * 480),
-    pieces: 1 + Math.floor(rand() * 6),
+    pieces: 1 + Math.floor(rand() * 5),
     stageIndex,
-    progress: stageIndex / (STAGES.length - 1),
+    terminal,
+    progress: stageIndex / (path.length - 1),
     eta,
     events,
   };

@@ -8,6 +8,8 @@ import Logo from "./Logo";
 import { locales, localeNames, type Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries";
 
+const LOGIN_URL = "https://rapidoss.loxbox.tn";
+
 function LangSwitcher({ locale, className = "" }: { locale: Locale; className?: string }) {
   const pathname = usePathname();
   // swap the locale prefix, keep the rest of the path
@@ -36,11 +38,13 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
+  // anchors mirror rapidoss.tn's one-page menu; track is our full page
   const links = [
-    { href: `/${locale}/services`, label: dict.services, index: "01" },
-    { href: `/${locale}/network`, label: dict.network, index: "02" },
-    { href: `/${locale}/track`, label: dict.track, index: "03" },
-    { href: `/${locale}/contact`, label: dict.quote, index: "04" },
+    { href: `/${locale}#services`, label: dict.services, index: "01" },
+    { href: `/${locale}#engagements`, label: dict.engagements, index: "02" },
+    { href: `/${locale}#apropos`, label: dict.about, index: "03" },
+    { href: `/${locale}#marketing`, label: dict.marketing, index: "04" },
+    { href: `/${locale}/track`, label: dict.track, index: "05" },
   ];
 
   useEffect(() => {
@@ -66,17 +70,17 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
             : "border-transparent bg-transparent"
         }`}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-8">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
           <Logo locale={locale} label={dict.home} />
 
-          <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
+          <nav className="hidden items-center gap-6 lg:flex" aria-label="Main">
             {links.map((link) => {
               const active = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`group relative font-mono text-[11px] font-medium tracking-[0.22em] uppercase transition-colors ${
+                  className={`group relative font-mono text-[11px] font-medium tracking-[0.18em] uppercase transition-colors ${
                     active ? "text-volt" : "text-ash hover:text-bone"
                   }`}
                 >
@@ -90,12 +94,29 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
                 </Link>
               );
             })}
-            <LangSwitcher locale={locale} />
           </nav>
+
+          <div className="hidden items-center gap-3 lg:flex">
+            <Link
+              href={`/${locale}#devis`}
+              className="bg-volt px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.18em] text-black uppercase clip-tag transition-colors hover:bg-volt-hot"
+            >
+              {dict.devis}
+            </Link>
+            <a
+              href={LOGIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="border border-edge-hi px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.18em] text-ash uppercase clip-tag transition-colors hover:border-volt hover:text-volt"
+            >
+              {dict.login}
+            </a>
+            <LangSwitcher locale={locale} />
+          </div>
 
           <button
             onClick={() => setOpen(!open)}
-            className="relative z-50 flex h-10 w-10 flex-col items-center justify-center gap-1.5 md:hidden"
+            className="relative z-50 flex h-10 w-10 flex-col items-center justify-center gap-1.5 lg:hidden"
             aria-label={open ? dict.closeMenu : dict.openMenu}
             aria-expanded={open}
           >
@@ -118,22 +139,26 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
             animate={{ clipPath: "inset(0 0 0% 0)" }}
             exit={{ clipPath: "inset(0 0 100% 0)" }}
             transition={{ duration: 0.45, ease: [0.76, 0, 0.24, 1] }}
-            className="fixed inset-0 z-40 flex flex-col justify-end bg-carbon md:hidden"
+            className="fixed inset-0 z-40 flex flex-col justify-end overflow-y-auto bg-carbon lg:hidden"
           >
             <div className="grid-lines pointer-events-none absolute inset-0" />
-            <nav className="relative px-6 pb-24" aria-label="Mobile">
-              {links.map((link, i) => (
+            <nav className="relative px-6 pb-16" aria-label="Mobile">
+              {[
+                ...links,
+                { href: `/${locale}#devis`, label: dict.devis, index: "06" },
+                { href: `/${locale}/devenir-livreur`, label: dict.becomeCourier, index: "07" },
+              ].map((link, i) => (
                 <motion.div
                   key={link.href}
                   initial={{ opacity: 0, x: -32 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.18 + i * 0.07, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ delay: 0.15 + i * 0.06, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   className="border-b border-edge"
                 >
                   <Link
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className="flex items-baseline gap-4 py-5 text-4xl font-bold tracking-tight"
+                    className="flex items-baseline gap-4 py-4 text-3xl font-bold tracking-tight"
                   >
                     <span className="font-mono text-xs text-volt">{link.index}</span>
                     {link.label}
@@ -143,14 +168,27 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="mt-8 flex items-center justify-between gap-4"
+                transition={{ delay: 0.6 }}
+                className="mt-7 flex flex-wrap items-center justify-between gap-4"
               >
-                <p className="font-mono text-[10px] tracking-[0.3em] text-smoke uppercase">
-                  {dict.tagline}
-                </p>
+                <a
+                  href={LOGIN_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="border border-edge-hi px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.18em] text-ash uppercase clip-tag"
+                >
+                  {dict.login}
+                </a>
                 <LangSwitcher locale={locale} />
               </motion.div>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="mt-6 font-mono text-[10px] tracking-[0.3em] text-smoke uppercase"
+              >
+                {dict.tagline}
+              </motion.p>
             </nav>
             <div className="hazard h-2" />
           </motion.div>

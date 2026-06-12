@@ -25,7 +25,7 @@ export default function TrackClient({
   const [scanLine, setScanLine] = useState(0);
   const [prevId, setPrevId] = useState(validId);
 
-  // reset the lookup when the waybill in the URL changes (during render,
+  // reset the lookup when the number in the URL changes (during render,
   // per React's "adjusting state when a prop changes" pattern)
   if (validId !== prevId) {
     setPrevId(validId);
@@ -52,6 +52,9 @@ export default function TrackClient({
     };
   }, [validId, locale, dict.scanLines.length]);
 
+  const isCancelled = shipment?.outcome === "cancelled";
+  const isReturned = shipment?.outcome === "returned";
+
   return (
     <div className="mx-auto max-w-5xl px-5 pb-28 sm:px-8">
       <div className="mt-12">
@@ -72,11 +75,7 @@ export default function TrackClient({
             </div>
             <div className="mt-6 space-y-2 font-mono text-xs tracking-[0.18em] text-ash uppercase">
               {dict.scanLines.slice(0, scanLine + 1).map((line, i) => (
-                <motion.p
-                  key={line}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                >
+                <motion.p key={line} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}>
                   <span className="me-3 text-volt">{">"}</span>
                   {line}
                   {i === scanLine && <span className="animate-blink ms-1 text-volt">▮</span>}
@@ -103,12 +102,16 @@ export default function TrackClient({
                 </p>
                 <p
                   className={`px-3 py-1 font-mono text-[10px] font-semibold tracking-[0.22em] uppercase clip-tag ${
-                    shipment.stageIndex === 5
-                      ? "bg-volt text-black"
-                      : "border border-volt/40 text-volt"
+                    isCancelled
+                      ? "border border-smoke text-smoke line-through"
+                      : shipment.terminal && !isReturned
+                        ? "bg-volt text-black"
+                        : isReturned && shipment.terminal
+                          ? "border border-ash text-ash"
+                          : "border border-volt/40 text-volt"
                   }`}
                 >
-                  {dict.stageBadges[shipment.events[shipment.stageIndex].stage]}
+                  {dict.statuses[shipment.path[shipment.stageIndex]]}
                 </p>
               </div>
 
@@ -127,31 +130,72 @@ export default function TrackClient({
                 ))}
               </div>
 
-              {/* journey progress — geometry pinned LTR so origin stays on the left */}
-              <div className="border-t border-edge px-7 py-6" dir="ltr">
-                <div className="flex items-center justify-between font-mono text-[9px] tracking-[0.25em] text-smoke uppercase">
-                  <span>{shipment.origin}</span>
-                  <span>
-                    {dict.eta}{" "}
-                    <span className="text-volt">{shipment.eta ?? dict.completed}</span>
-                  </span>
-                  <span>{shipment.destination}</span>
+              {/* status pipeline stepper */}
+              <div className="border-t border-edge px-7 py-6">
+                <p className="font-mono text-[9px] tracking-[0.25em] text-smoke uppercase">
+                  {dict.pipelineLabel}
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {shipment.path.map((status, i) => {
+                    const done = i < shipment.stageIndex;
+                    const current = i === shipment.stageIndex;
+                    return (
+                      <span key={status} className="flex items-center gap-2">
+                        <motion.span
+                          initial={{ opacity: 0, scale: 0.85 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.3 + i * 0.12 }}
+                          className={`px-3 py-1.5 font-mono text-[10px] tracking-[0.18em] uppercase clip-tag ${
+                            current
+                              ? isCancelled
+                                ? "border border-smoke bg-smoke/15 text-bone line-through"
+                                : "bg-volt font-semibold text-black"
+                              : done
+                                ? "border border-volt/50 text-volt"
+                                : "border border-edge text-smoke"
+                          }`}
+                        >
+                          {dict.statuses[status]}
+                        </motion.span>
+                        {i < shipment.path.length - 1 && (
+                          <span
+                            className={`hidden h-px w-4 sm:block ${done ? "bg-volt" : "bg-edge"}`}
+                            aria-hidden
+                          />
+                        )}
+                      </span>
+                    );
+                  })}
                 </div>
-                <div className="relative mt-3 h-1.5 bg-edge">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${shipment.progress * 100}%` }}
-                    transition={{ duration: 1.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute inset-y-0 left-0 bg-volt"
-                  />
-                  <motion.span
-                    initial={{ left: 0 }}
-                    animate={{ left: `${shipment.progress * 100}%` }}
-                    transition={{ duration: 1.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-1/2 -ml-2 grid h-4 w-4 -translate-y-1/2 place-items-center bg-volt clip-tag"
-                  >
-                    <span className="h-1.5 w-1.5 bg-black" />
-                  </motion.span>
+
+                {/* journey progress — geometry pinned LTR so origin stays on the left */}
+                <div className="mt-6" dir="ltr">
+                  <div className="flex items-center justify-between font-mono text-[9px] tracking-[0.25em] text-smoke uppercase">
+                    <span>{shipment.origin}</span>
+                    <span>
+                      {dict.eta}{" "}
+                      <span className="text-volt">{shipment.eta ?? dict.completed}</span>
+                    </span>
+                    <span>{isReturned || isCancelled ? shipment.origin : shipment.destination}</span>
+                  </div>
+                  <div className="relative mt-3 h-1.5 bg-edge">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${shipment.progress * 100}%` }}
+                      transition={{ duration: 1.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className={`absolute inset-y-0 left-0 ${isCancelled ? "bg-smoke" : "bg-volt"}`}
+                    />
+                    <motion.span
+                      initial={{ left: 0 }}
+                      animate={{ left: `${shipment.progress * 100}%` }}
+                      transition={{ duration: 1.4, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      className={`absolute top-1/2 -ml-2 grid h-4 w-4 -translate-y-1/2 place-items-center clip-tag ${
+                        isCancelled ? "bg-smoke" : "bg-volt"
+                      }`}
+                    >
+                      <span className="h-1.5 w-1.5 bg-black" />
+                    </motion.span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -160,7 +204,7 @@ export default function TrackClient({
             <ol className="relative mt-10 space-y-0 border-s-2 border-edge ps-8">
               {shipment.events.map((ev, i) => (
                 <motion.li
-                  key={ev.stage}
+                  key={ev.status}
                   initial={{ opacity: 0, x: -16 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.5 + i * 0.13, duration: 0.45 }}
@@ -169,14 +213,16 @@ export default function TrackClient({
                   <span
                     className={`absolute top-0.5 -start-[2.45rem] grid h-5 w-5 place-items-center border ${
                       ev.current
-                        ? "border-volt bg-volt"
+                        ? isCancelled
+                          ? "border-smoke bg-smoke"
+                          : "border-volt bg-volt"
                         : ev.done
                           ? "border-volt bg-void"
                           : "border-edge-hi bg-void"
                     }`}
                   >
                     {ev.done && <span className="h-1.5 w-1.5 bg-volt" />}
-                    {ev.current && (
+                    {ev.current && !shipment.terminal && (
                       <motion.span
                         className="absolute inset-0 border border-volt"
                         animate={{ scale: [1, 1.9], opacity: [0.8, 0] }}
@@ -187,10 +233,10 @@ export default function TrackClient({
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <h3
                       className={`text-base font-bold tracking-tight uppercase ${
-                        ev.current ? "text-volt" : ""
+                        ev.current ? (isCancelled ? "text-smoke line-through" : "text-volt") : ""
                       }`}
                     >
-                      {dict.stages[ev.stage]}
+                      {dict.statusEvents[ev.status]}
                     </h3>
                     <span className="font-mono text-[10px] tracking-[0.2em] text-smoke">
                       {ev.timestamp}
