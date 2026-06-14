@@ -22,12 +22,13 @@ function FleetVan({ moving }: { moving: boolean }) {
   useFrame((state) => {
     if (!ref.current || !moving) return;
     const t = state.clock.elapsedTime;
-    ref.current.rotation.y = -0.52 + Math.sin(t * 0.3) * 0.05;
+    // mostly side-on so the branded flank faces the viewer, with a gentle sway
+    ref.current.rotation.y = -0.85 + Math.sin(t * 0.3) * 0.05;
     ref.current.position.z = 0.4 + Math.sin(t * 0.45) * 0.1;
   });
 
   return (
-    <group ref={ref} position={[1.7, FLOOR_Y, 0.4]} rotation={[0, -0.52, 0]} scale={1.28}>
+    <group ref={ref} position={[1.55, FLOOR_Y, 0.4]} rotation={[0, -0.85, 0]} scale={1.22}>
       <Van spin={moving} />
     </group>
   );
@@ -132,8 +133,9 @@ export default function HeroScene({
       onCreated={({ camera }) => camera.lookAt(0.7, -0.55, 0)}
     >
       <fog attach="fog" args={[light ? FOG_LIGHT : FOG_DARK, 9, 18]} />
-      <ambientLight intensity={light ? 0.9 : 0.55} />
-      <directionalLight position={[4, 6, 5]} intensity={1.2} color="#fff7df" />
+      <ambientLight intensity={light ? 0.95 : 0.7} />
+      <directionalLight position={[4, 6, 5]} intensity={1.5} color="#fff7df" />
+      <directionalLight position={[2, 3, 7]} intensity={0.5} color="#ffffff" />
       <pointLight position={[-5, 2, -3]} intensity={14} color={VOLT} />
 
       <FleetVan moving={!reduced} />

@@ -43,9 +43,9 @@ function Rig({ moving }: { moving: boolean }) {
   useFrame((state) => {
     if (!moving) return;
     const { camera, pointer } = state;
-    camera.position.x += (3.4 + pointer.x * 0.7 - camera.position.x) * 0.05;
-    camera.position.y += (1.6 + pointer.y * 0.4 - camera.position.y) * 0.05;
-    camera.lookAt(0, 0.55, 0);
+    camera.position.x += (2.1 + pointer.x * 0.7 - camera.position.x) * 0.05;
+    camera.position.y += (1.35 + pointer.y * 0.4 - camera.position.y) * 0.05;
+    camera.lookAt(0, 0.6, 0);
   });
   return null;
 }
@@ -59,18 +59,19 @@ export default function VanScene({
 }) {
   return (
     <Canvas
-      camera={{ position: [3.4, 1.6, 4.6], fov: 36 }}
+      camera={{ position: [2.1, 1.35, 5.0], fov: 34 }}
       dpr={[1, 1.75]}
       frameloop={reduced ? "demand" : "always"}
       gl={{ antialias: true, alpha: true }}
       aria-hidden
     >
       <fog attach="fog" args={[light ? FOG_LIGHT : FOG_DARK, 8, 16]} />
-      <ambientLight intensity={light ? 0.9 : 0.55} />
-      <directionalLight position={[5, 7, 4]} intensity={1.2} color="#fff7df" />
+      <ambientLight intensity={light ? 0.95 : 0.7} />
+      <directionalLight position={[5, 7, 4]} intensity={1.5} color="#fff7df" />
+      <directionalLight position={[-3, 3, 6]} intensity={0.6} color="#ffffff" />
       <pointLight position={[-4, 2.5, -3]} intensity={12} color={VOLT} />
 
-      <group rotation={[0, -0.5, 0]}>
+      <group rotation={[0, 0.32, 0]}>
         <Van spin={!reduced} />
       </group>
 
