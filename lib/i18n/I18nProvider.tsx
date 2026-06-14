@@ -1,83 +1,64 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
-import { defaultLocale, isLocale, localeDir, type Locale } from "./config";
+import { createContext, useContext, useEffect, useState } from "react";
+import { localeDir, type Locale } from "./config";
 import { dictionaries, type Dictionary } from "./dictionaries";
+import { LOCALE_COOKIE } from "./constants";
 
-const STORAGE_KEY = "locale";
-
-// ---- external locale store (no setState-in-effect, SSR-safe) ----
-
-const listeners = new Set<() => void>();
-let current: Locale | null = null;
-
-/** Resolve a stored choice, then the browser language, then the default. */
-function detectLocale(): Locale {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && isLocale(stored)) return stored;
-  } catch {
-    /* private mode */
-  }
-  const nav = navigator.language?.slice(0, 2).toLowerCase();
-  if (nav && isLocale(nav)) return nav;
-  return defaultLocale;
-}
-
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  return () => {
-    listeners.delete(cb);
-  };
-}
-
-function getSnapshot(): Locale {
-  if (!current) current = detectLocale();
-  return current;
-}
-
-const getServerSnapshot = (): Locale => defaultLocale;
-
-function applyDocument(locale: Locale) {
-  document.documentElement.lang = locale;
-  document.documentElement.dir = localeDir[locale];
-}
-
-export function setLocale(next: Locale) {
-  current = next;
-  try {
-    localStorage.setItem(STORAGE_KEY, next);
-  } catch {
-    /* private mode */
-  }
-  applyDocument(next);
-  listeners.forEach((cb) => cb());
-}
-
-// ---- hooks ----
-
-export interface I18n {
+interface I18nValue {
   locale: Locale;
   dict: Dictionary;
   setLocale: (locale: Locale) => void;
 }
 
-export function useI18n(): I18n {
-  const locale = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-  return { locale, dict: dictionaries[locale], setLocale };
+const I18nContext = createContext<I18nValue | null>(null);
+
+/** Mirror the active locale into the cookie (for SSR), localStorage and
+ *  the document's language/direction. */
+function persist(locale: Locale) {
+  try {
+    localStorage.setItem(LOCALE_COOKIE, locale);
+  } catch {
+    /* private mode */
+  }
+  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
+  document.documentElement.lang = locale;
+  document.documentElement.dir = localeDir[locale];
 }
 
 /**
- * Keeps the document's language + direction in sync with the active
- * locale. The boot script in the layout sets these before first paint;
- * this re-applies them once React adopts the stored choice.
+ * Language lives in context, not the URL. The server resolves the initial
+ * locale from the cookie/Accept-Language and passes it in, so the first
+ * render already matches the visitor's choice (no flash, no mismatch).
  */
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const { locale } = useI18n();
+export function I18nProvider({
+  initialLocale,
+  children,
+}: {
+  initialLocale: Locale;
+  children: React.ReactNode;
+}) {
+  const [locale, setLocale] = useState<Locale>(initialLocale);
+
+  // refresh the cookie TTL and keep document attributes in sync; runs on
+  // mount and on every switch (updates external systems only)
   useEffect(() => {
-    applyDocument(locale);
+    persist(locale);
   }, [locale]);
-  return <>{children}</>;
+
+  const value: I18nValue = {
+    locale,
+    dict: dictionaries[locale],
+    setLocale,
+  };
+
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+export function useI18n(): I18nValue {
+  const ctx = useContext(I18nContext);
+  if (!ctx) throw new Error("useI18n must be used within <I18nProvider>");
+  return ctx;
 }
 
 /** Sets document.title for a page; reactive to locale changes. */

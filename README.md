@@ -58,18 +58,20 @@ through **React context, not the URL**. There are no `/fr`, `/en`, `/ar`
 routes and no middleware; every page lives at its plain path (`/`, `/track`,
 `/devenir-livreur`).
 
-- `lib/i18n/I18nProvider.tsx` holds the active locale in an external store
-  (read with `useSyncExternalStore`, like the theme). Switching language is
-  instant and in-place — the URL never changes and the page does not reload.
-- The choice persists in `localStorage`; first-time visitors are matched by
-  `navigator.language`, falling back to French. A boot script sets
-  `<html lang/dir>` before first paint so RTL doesn't flash.
-- `useI18n()` returns `{ locale, dict, setLocale }`; dictionaries live in
+- The server resolves the locale per request in `lib/i18n/server.ts`
+  (`getServerLocale`): a `locale` cookie wins, otherwise the
+  `Accept-Language` header, otherwise French. The layout renders
+  `<html lang/dir>`, the body content and each route's metadata in that
+  language, so a hard reload is correct with no flash (routes are
+  server-rendered on demand).
+- `lib/i18n/I18nProvider.tsx` takes that `initialLocale` and holds it in
+  context. Switching language is instant and in-place — the URL never
+  changes and the page does not reload — and writes the `locale` cookie
+  (plus `localStorage`) so the next server render matches.
+- `useI18n()` returns `{ locale, dict, setLocale }`; `usePageTitle`
+  localizes `document.title` on client navigation. Dictionaries live in
   `lib/i18n/{en,fr,ar}.ts` (the English file is the canonical shape, the
-  others are type-checked against it) and are bundled for the client.
-- SSR/crawlers get a French baseline (`<title>`/meta from each route's
-  static metadata); `usePageTitle` localizes the document title on the
-  client.
+  others are type-checked against it).
 - Arabic renders fully **RTL** with IBM Plex Sans Arabic, mirrored
   directional UI and Arabic scramble glyphs; mechanical geometry
   (marquees, progress bars, tracking codes) stays pinned LTR.
