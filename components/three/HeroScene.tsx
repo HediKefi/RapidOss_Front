@@ -1,32 +1,26 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Edges, Float, Grid, Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import Van from "./Van";
 
 const VOLT = "#f5c400";
-const CARDBOARD = "#191712";
+const BOX = "#e8b40a"; // kraft-yellow parcel
 const FOG_DARK = "#0c0b09";
 const FOG_LIGHT = "#e7e3d3";
 const FLOOR_Y = -1.75;
 
-/**
- * The fleet van — star of the scene. Driving in place over the
- * scrolling floor, with a gentle road sway.
- */
+/** The fleet van — star of the scene, driving in place with a road sway. */
 function FleetVan({ moving }: { moving: boolean }) {
   const ref = useRef<THREE.Group>(null);
-
   useFrame((state) => {
     if (!ref.current || !moving) return;
     const t = state.clock.elapsedTime;
-    // mostly side-on so the branded flank faces the viewer, with a gentle sway
     ref.current.rotation.y = -0.85 + Math.sin(t * 0.3) * 0.05;
     ref.current.position.z = 0.4 + Math.sin(t * 0.45) * 0.1;
   });
-
   return (
     <group ref={ref} position={[1.55, FLOOR_Y, 0.4]} rotation={[0, -0.85, 0]} scale={1.22}>
       <Van spin={moving} />
@@ -34,17 +28,19 @@ function FleetVan({ moving }: { moving: boolean }) {
   );
 }
 
-/** Secondary cast: small parcels drifting in the backdrop. */
+/** Yellow parcels tumbling in the backdrop (secondary to the van). */
 function Parcels() {
   const items = useMemo(
     () =>
       [
-        { pos: [-3.6, 0.9, -1.6], size: 0.34, wire: false, speed: 1.6 },
-        { pos: [-2.4, 1.8, -0.8], size: 0.22, wire: true, speed: 2.2 },
-        { pos: [-4.5, -0.2, -2.2], size: 0.46, wire: true, speed: 0.9 },
-        { pos: [3.9, 1.7, -1.8], size: 0.3, wire: false, speed: 1.3 },
-        { pos: [4.6, 0.3, -2.4], size: 0.4, wire: true, speed: 1.1 },
-        { pos: [-1.2, 2.2, -1.2], size: 0.2, wire: false, speed: 2.4 },
+        { pos: [-3.7, 1.5, -1.6], size: 0.42, wire: false, speed: 1.6 },
+        { pos: [-2.3, 2.2, -0.9], size: 0.26, wire: true, speed: 2.2 },
+        { pos: [-4.6, 0.6, -2.2], size: 0.5, wire: false, speed: 0.9 },
+        { pos: [3.8, 2.0, -1.8], size: 0.32, wire: false, speed: 1.3 },
+        { pos: [4.7, 0.9, -2.4], size: 0.44, wire: true, speed: 1.1 },
+        { pos: [-1.0, 2.5, -1.2], size: 0.22, wire: false, speed: 2.4 },
+        { pos: [2.4, 2.4, -1.1], size: 0.3, wire: false, speed: 1.5 },
+        { pos: [-5.2, 1.9, -2.6], size: 0.36, wire: true, speed: 1.0 },
       ] as const,
     []
   );
@@ -56,7 +52,7 @@ function Parcels() {
           key={i}
           speed={it.speed}
           rotationIntensity={1.3}
-          floatIntensity={1.5}
+          floatIntensity={1.6}
           position={it.pos as unknown as THREE.Vector3}
         >
           <mesh>
@@ -65,8 +61,8 @@ function Parcels() {
               <meshBasicMaterial color={VOLT} wireframe transparent opacity={0.45} />
             ) : (
               <>
-                <meshStandardMaterial color={CARDBOARD} roughness={0.9} />
-                <Edges scale={1.002} color={VOLT} />
+                <meshStandardMaterial color={BOX} roughness={0.75} />
+                <Edges scale={1.002} color="#7a5a00" />
               </>
             )}
           </mesh>
@@ -76,16 +72,97 @@ function Parcels() {
   );
 }
 
-/** Scrolls the floor under the van so it reads as driving. */
-function MovingFloor({ light, moving }: { light: boolean; moving: boolean }) {
+// generated once at module load so render stays pure
+const SPEED_LINES = Array.from({ length: 11 }, () => ({
+  y: -1.45 + Math.random() * 3.0,
+  z: -2.4 + Math.random() * 4.4,
+  len: 1.6 + Math.random() * 2.8,
+  speed: 6 + Math.random() * 7,
+  x: -7 + Math.random() * 14,
+  w: 0.012 + Math.random() * 0.03,
+  volt: Math.random() > 0.6,
+}));
+
+/** Horizontal light streaks that read as speed behind the van. */
+function SpeedLines({ moving }: { moving: boolean }) {
   const ref = useRef<THREE.Group>(null);
 
-  useFrame((state) => {
+  useFrame((_, delta) => {
     if (!ref.current || !moving) return;
-    // wrap within one grid section so the shader pattern loops seamlessly
-    ref.current.position.x = -((state.clock.elapsedTime * 2.8) % 4);
+    ref.current.children.forEach((c, i) => {
+      c.position.x -= SPEED_LINES[i].speed * delta;
+      if (c.position.x < -8) c.position.x = 8;
+    });
   });
 
+  return (
+    <group ref={ref}>
+      {SPEED_LINES.map((l, i) => (
+        <mesh key={i} position={[l.x, l.y, l.z]}>
+          <planeGeometry args={[l.len, l.w]} />
+          <meshBasicMaterial
+            color={l.volt ? VOLT : "#fff7e0"}
+            transparent
+            opacity={0.18}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function makeStar(): THREE.CanvasTexture {
+  const c = document.createElement("canvas");
+  c.width = c.height = 128;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.25, "rgba(255,247,210,0.7)");
+  g.addColorStop(1, "rgba(255,247,210,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  ctx.strokeStyle = "rgba(255,255,255,0.9)";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(64, 6); ctx.lineTo(64, 122);
+  ctx.moveTo(6, 64); ctx.lineTo(122, 64);
+  ctx.stroke();
+  return new THREE.CanvasTexture(c);
+}
+
+/** A glinting sparkle on the van roof, like the reference's lens flare. */
+function RoofSparkle() {
+  const tex = useMemo(() => makeStar(), []);
+  const ref = useRef<THREE.Sprite>(null);
+  useEffect(() => () => tex.dispose(), [tex]);
+  useFrame((state) => {
+    if (!ref.current) return;
+    const p = 0.65 + Math.sin(state.clock.elapsedTime * 2.6) * 0.35;
+    ref.current.scale.setScalar(0.7 * p);
+    (ref.current.material as THREE.SpriteMaterial).opacity = p;
+  });
+  return (
+    <sprite ref={ref} position={[1.35, 0.05, 0.6]}>
+      <spriteMaterial
+        map={tex}
+        transparent
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        toneMapped={false}
+      />
+    </sprite>
+  );
+}
+
+function MovingFloor({ light, moving }: { light: boolean; moving: boolean }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame((state) => {
+    if (!ref.current || !moving) return;
+    ref.current.position.x = -((state.clock.elapsedTime * 2.8) % 4);
+  });
   return (
     <group ref={ref}>
       <Grid
@@ -105,7 +182,6 @@ function MovingFloor({ light, moving }: { light: boolean; moving: boolean }) {
   );
 }
 
-/** Eases the camera toward the pointer for a parallax feel. */
 function CameraRig() {
   useFrame((state) => {
     const { camera, pointer } = state;
@@ -140,6 +216,8 @@ export default function HeroScene({
 
       <FleetVan moving={!reduced} />
       <Parcels />
+      {!reduced && <SpeedLines moving />}
+      {!reduced && <RoofSparkle />}
 
       <Sparkles
         count={60}
