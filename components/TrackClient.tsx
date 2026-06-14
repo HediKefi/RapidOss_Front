@@ -5,17 +5,13 @@ import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { lookupShipment, type Shipment } from "@/lib/tracking";
 import TrackSearch from "./TrackSearch";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type Phase = "idle" | "scanning" | "result";
 
-export default function TrackClient({
-  locale,
-  dict,
-}: {
-  locale: string;
-  dict: Dictionary["trackPage"];
-}) {
+export default function TrackClient() {
+  const { locale, dict: full } = useI18n();
+  const dict = full.trackPage;
   const params = useSearchParams();
   const id = params.get("id");
   const validId = id && /^RX-?\d{6}$/i.test(id.trim()) ? id.trim() : null;
@@ -58,7 +54,7 @@ export default function TrackClient({
   return (
     <div className="mx-auto max-w-5xl px-5 pb-28 sm:px-8">
       <div className="mt-12">
-        <TrackSearch locale={locale} dict={dict.search} autoFocus={!id} />
+        <TrackSearch autoFocus={!id} />
       </div>
 
       <AnimatePresence mode="wait">

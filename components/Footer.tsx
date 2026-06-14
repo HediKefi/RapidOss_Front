@@ -1,7 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Logo from "./Logo";
-import type { Locale } from "@/lib/i18n/config";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 const FACEBOOK_URL = "https://www.facebook.com/profile.php?id=61586099996307";
 const INSTAGRAM_URL = "https://www.instagram.com/rapidossdelivery2026";
@@ -23,34 +24,31 @@ function SocialIcon({ href, label, path }: { href: string; label: string; path: 
   );
 }
 
-export default function Footer({
-  locale,
-  dict,
-}: {
-  locale: Locale;
-  dict: Dictionary["footer"];
-}) {
+export default function Footer() {
+  const { dict } = useI18n();
+  const f = dict.footer;
+
   const links: [string, string, boolean][] = [
-    [dict.links.services, `/${locale}#services`, false],
-    [dict.links.engagements, `/${locale}#engagements`, false],
-    [dict.links.about, `/${locale}#apropos`, false],
-    [dict.links.track, `/${locale}/track`, false],
-    [dict.links.devis, `/${locale}#devis`, false],
-    [dict.links.courier, `/${locale}/devenir-livreur`, false],
-    [dict.links.login, LOGIN_URL, true],
+    [f.links.services, "/#services", false],
+    [f.links.engagements, "/#engagements", false],
+    [f.links.about, "/#apropos", false],
+    [f.links.track, "/track", false],
+    [f.links.devis, "/#devis", false],
+    [f.links.courier, "/devenir-livreur", false],
+    [f.links.login, LOGIN_URL, true],
   ];
 
   return (
     <footer id="contact" className="border-t border-edge bg-carbon">
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr_1.1fr]">
         <div>
-          <Logo locale={locale} label="RAPIDOSS" />
-          <p className="mt-5 max-w-xs text-sm leading-relaxed text-ash">{dict.blurb}</p>
+          <Logo label="RAPIDOSS" />
+          <p className="mt-5 max-w-xs text-sm leading-relaxed text-ash">{f.blurb}</p>
           <p className="mt-6 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase">
-            {dict.dispatch}
+            {f.dispatch}
           </p>
           <p className="mt-1 font-mono text-xs tracking-wider text-bone" dir="ltr">
-            {dict.phones}
+            {f.phones}
           </p>
           <div className="mt-6 flex gap-2">
             <SocialIcon
@@ -68,7 +66,7 @@ export default function Footer({
 
         <nav aria-label="Footer">
           <h3 className="font-mono text-[10px] tracking-[0.3em] text-volt uppercase">
-            {dict.navigate}
+            {f.navigate}
           </h3>
           <ul className="mt-5 space-y-3 text-sm">
             {links.map(([label, href, external]) => (
@@ -93,28 +91,26 @@ export default function Footer({
         </nav>
 
         <div>
-          <h3 className="font-mono text-[10px] tracking-[0.3em] text-volt uppercase">
-            {dict.hq}
-          </h3>
+          <h3 className="font-mono text-[10px] tracking-[0.3em] text-volt uppercase">{f.hq}</h3>
           <p className="mt-5 text-sm leading-relaxed text-ash">
-            {dict.address1}
+            {f.address1}
             <br />
-            {dict.address2}
+            {f.address2}
             <br />
-            <span className="text-smoke">{dict.email}</span>
+            <span className="text-smoke">{f.email}</span>
           </p>
         </div>
 
         <div className="border border-edge bg-panel p-6 clip-tag self-start">
           <h3 className="font-mono text-[10px] tracking-[0.3em] text-volt uppercase">
-            {dict.feedbackKicker}
+            {f.feedbackKicker}
           </h3>
-          <p className="mt-3 text-sm leading-relaxed text-ash">{dict.feedbackBody}</p>
+          <p className="mt-3 text-sm leading-relaxed text-ash">{f.feedbackBody}</p>
           <a
-            href={`mailto:${dict.email}`}
+            href={`mailto:${f.email}`}
             className="mt-4 inline-block font-mono text-[10px] font-semibold tracking-[0.2em] text-volt uppercase underline-offset-4 hover:underline"
           >
-            {dict.feedbackCta} <span className="inline-block rtl:-scale-x-100">→</span>
+            {f.feedbackCta} <span className="inline-block rtl:-scale-x-100">→</span>
           </a>
         </div>
       </div>
@@ -127,8 +123,8 @@ export default function Footer({
 
       <div className="border-t border-edge">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-5 py-4 font-mono text-[10px] tracking-[0.2em] text-smoke uppercase sm:px-8">
-          <span>{dict.copyright}</span>
-          <span>{dict.tagline}</span>
+          <span>{f.copyright}</span>
+          <span>{f.tagline}</span>
         </div>
       </div>
       <div className="hazard h-2" />

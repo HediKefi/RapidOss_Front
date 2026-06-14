@@ -2,19 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
-/** Inline tracking-code input — validates RX-###### and routes to the locale's /track. */
-export default function TrackSearch({
-  locale,
-  dict,
-  autoFocus = false,
-}: {
-  locale: string;
-  dict: Dictionary["trackPage"]["search"];
-  autoFocus?: boolean;
-}) {
+/** Inline tracking-code input — validates RX-###### and routes to /track. */
+export default function TrackSearch({ autoFocus = false }: { autoFocus?: boolean }) {
   const router = useRouter();
+  const { dict } = useI18n();
+  const t = dict.trackPage.search;
   const [value, setValue] = useState("");
   const [error, setError] = useState(false);
 
@@ -25,7 +19,7 @@ export default function TrackSearch({
       setError(true);
       return;
     }
-    router.push(`/${locale}/track?id=${encodeURIComponent(cleaned)}`);
+    router.push(`/track?id=${encodeURIComponent(cleaned)}`);
   };
 
   return (
@@ -36,7 +30,7 @@ export default function TrackSearch({
         }`}
       >
         <span className="hidden items-center border-e border-edge px-4 font-mono text-[10px] tracking-[0.25em] text-smoke uppercase sm:flex">
-          {dict.waybill}
+          {t.waybill}
         </span>
         <input
           value={value}
@@ -45,8 +39,8 @@ export default function TrackSearch({
             setError(false);
           }}
           autoFocus={autoFocus}
-          placeholder={dict.placeholder}
-          aria-label={dict.ariaLabel}
+          placeholder={t.placeholder}
+          aria-label={t.ariaLabel}
           dir="ltr"
           className="min-w-0 flex-1 bg-transparent px-4 py-4 font-mono text-sm tracking-[0.18em] text-bone uppercase placeholder:text-smoke focus:outline-none rtl:text-end"
         />
@@ -54,7 +48,7 @@ export default function TrackSearch({
           type="submit"
           className="bg-volt px-5 font-mono text-xs font-semibold tracking-[0.2em] text-black uppercase transition-colors hover:bg-volt-hot sm:px-7"
         >
-          {dict.button}
+          {t.button}
         </button>
       </div>
       <p
@@ -63,7 +57,7 @@ export default function TrackSearch({
         }`}
         role={error ? "alert" : undefined}
       >
-        {error ? dict.error : dict.hint}
+        {error ? t.error : t.hint}
       </p>
     </form>
   );

@@ -23,6 +23,7 @@ export default function PageHeader({
           </p>
         </Reveal>
         <ScrambleText
+          key={title}
           as="h1"
           text={title}
           delay={250}

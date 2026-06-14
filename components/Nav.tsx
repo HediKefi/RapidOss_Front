@@ -5,15 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import Logo from "./Logo";
-import { locales, localeNames, type Locale } from "@/lib/i18n/config";
-import type { Dictionary } from "@/lib/i18n/dictionaries";
+import { locales, localeNames } from "@/lib/i18n/config";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useTheme, toggleTheme } from "@/lib/theme";
 
 const LOGIN_URL = "https://rapidoss.loxbox.tn";
 
-function ThemeToggle({ dict }: { dict: Dictionary["nav"] }) {
+function ThemeToggle() {
+  const { dict } = useI18n();
   const theme = useTheme();
-  const label = theme === "dark" ? dict.themeLight : dict.themeDark;
+  const label = theme === "dark" ? dict.nav.themeLight : dict.nav.themeDark;
 
   return (
     <button
@@ -38,41 +39,41 @@ function ThemeToggle({ dict }: { dict: Dictionary["nav"] }) {
   );
 }
 
-function LangSwitcher({ locale, className = "" }: { locale: Locale; className?: string }) {
-  const pathname = usePathname();
-  // swap the locale prefix, keep the rest of the path
-  const rest = pathname.replace(/^\/(en|fr|ar)(?=\/|$)/, "") || "";
+function LangSwitcher({ className = "" }: { className?: string }) {
+  const { locale, setLocale } = useI18n();
 
   return (
     <div className={`flex items-center border border-edge font-mono text-[10px] tracking-[0.15em] ${className}`}>
       {locales.map((l) => (
-        <Link
+        <button
           key={l}
-          href={`/${l}${rest}`}
-          aria-current={l === locale ? "true" : undefined}
+          type="button"
+          onClick={() => setLocale(l)}
+          aria-pressed={l === locale}
           className={`px-2.5 py-1.5 uppercase transition-colors ${
             l === locale ? "bg-volt text-black" : "text-ash hover:text-volt"
           }`}
         >
           {localeNames[l]}
-        </Link>
+        </button>
       ))}
     </div>
   );
 }
 
-export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary["nav"] }) {
+export default function Nav() {
+  const { dict } = useI18n();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
-  // anchors mirror rapidoss.tn's one-page menu; track is our full page
+  // anchors mirror rapidoss.tn's one-page menu; track is a full page
   const links = [
-    { href: `/${locale}#services`, label: dict.services, index: "01" },
-    { href: `/${locale}#engagements`, label: dict.engagements, index: "02" },
-    { href: `/${locale}#apropos`, label: dict.about, index: "03" },
-    { href: `/${locale}#marketing`, label: dict.marketing, index: "04" },
-    { href: `/${locale}/track`, label: dict.track, index: "05" },
+    { href: "/#services", label: dict.nav.services, index: "01" },
+    { href: "/#engagements", label: dict.nav.engagements, index: "02" },
+    { href: "/#apropos", label: dict.nav.about, index: "03" },
+    { href: "/#marketing", label: dict.nav.marketing, index: "04" },
+    { href: "/track", label: dict.nav.track, index: "05" },
   ];
 
   useEffect(() => {
@@ -99,7 +100,7 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
         }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5 sm:px-8">
-          <Logo locale={locale} label={dict.home} />
+          <Logo label={dict.nav.home} />
 
           <nav className="hidden items-center gap-6 lg:flex" aria-label="Main">
             {links.map((link) => {
@@ -126,10 +127,10 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
 
           <div className="hidden items-center gap-3 lg:flex">
             <Link
-              href={`/${locale}#devis`}
+              href="/#devis"
               className="bg-volt px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.18em] text-black uppercase clip-tag transition-colors hover:bg-volt-hot"
             >
-              {dict.devis}
+              {dict.nav.devis}
             </Link>
             <a
               href={LOGIN_URL}
@@ -137,16 +138,16 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
               rel="noopener noreferrer"
               className="border border-edge-hi px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.18em] text-ash uppercase clip-tag transition-colors hover:border-volt hover:text-volt"
             >
-              {dict.login}
+              {dict.nav.login}
             </a>
-            <LangSwitcher locale={locale} />
-            <ThemeToggle dict={dict} />
+            <LangSwitcher />
+            <ThemeToggle />
           </div>
 
           <button
             onClick={() => setOpen(!open)}
             className="relative z-50 flex h-10 w-10 flex-col items-center justify-center gap-1.5 lg:hidden"
-            aria-label={open ? dict.closeMenu : dict.openMenu}
+            aria-label={open ? dict.nav.closeMenu : dict.nav.openMenu}
             aria-expanded={open}
           >
             <motion.span
@@ -174,8 +175,8 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
             <nav className="relative px-6 pb-16" aria-label="Mobile">
               {[
                 ...links,
-                { href: `/${locale}#devis`, label: dict.devis, index: "06" },
-                { href: `/${locale}/devenir-livreur`, label: dict.becomeCourier, index: "07" },
+                { href: "/#devis", label: dict.nav.devis, index: "06" },
+                { href: "/devenir-livreur", label: dict.nav.becomeCourier, index: "07" },
               ].map((link, i) => (
                 <motion.div
                   key={link.href}
@@ -206,11 +207,11 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
                   rel="noopener noreferrer"
                   className="border border-edge-hi px-4 py-2 font-mono text-[10px] font-semibold tracking-[0.18em] text-ash uppercase clip-tag"
                 >
-                  {dict.login}
+                  {dict.nav.login}
                 </a>
                 <div className="flex items-center gap-3">
-                  <LangSwitcher locale={locale} />
-                  <ThemeToggle dict={dict} />
+                  <LangSwitcher />
+                  <ThemeToggle />
                 </div>
               </motion.div>
               <motion.p
@@ -219,7 +220,7 @@ export default function Nav({ locale, dict }: { locale: Locale; dict: Dictionary
                 transition={{ delay: 0.7 }}
                 className="mt-6 font-mono text-[10px] tracking-[0.3em] text-smoke uppercase"
               >
-                {dict.tagline}
+                {dict.nav.tagline}
               </motion.p>
             </nav>
             <div className="hazard h-2" />

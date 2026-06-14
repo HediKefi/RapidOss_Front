@@ -1,25 +1,15 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+"use client";
+
 import PageHeader from "@/components/PageHeader";
 import Reveal from "@/components/Reveal";
 import CourierForm from "@/components/CourierForm";
 import Van3D from "@/components/Van3D";
-import { isLocale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { useI18n, usePageTitle } from "@/lib/i18n/I18nProvider";
 
-type Params = { params: Promise<{ locale: string }> };
-
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const { locale } = await params;
-  if (!isLocale(locale)) return {};
-  const dict = await getDictionary(locale);
-  return dict.courierPage.meta;
-}
-
-export default async function CourierPage({ params }: Params) {
-  const { locale } = await params;
-  if (!isLocale(locale)) notFound();
-  const t = (await getDictionary(locale)).courierPage;
+export default function CourierPageClient() {
+  const { dict } = useI18n();
+  const t = dict.courierPage;
+  usePageTitle(t.meta.title);
 
   return (
     <>
@@ -53,7 +43,7 @@ export default async function CourierPage({ params }: Params) {
         </Reveal>
 
         <Reveal delay={0.15} variant="swing">
-          <CourierForm dict={t.form} villes={(await getDictionary(locale)).villes} />
+          <CourierForm dict={t.form} villes={dict.villes} />
         </Reveal>
       </div>
     </>

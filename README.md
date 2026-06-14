@@ -36,7 +36,7 @@ phones, email), Facebook/Instagram links and the suggestions box.
   a tracking glare (fine pointers only).
 - **`components/Reveal.tsx`** — scroll reveals, including a `swing` variant
   that racks sections in with perspective rotation.
-- **`app/[locale]/template.tsx`** — yellow shutter wipe between routes.
+- **`app/template.tsx`** — yellow shutter wipe between routes.
 - Scramble-text headlines, in-view counters, marquees, magnetic CTAs.
 - Everything respects `prefers-reduced-motion` (the 3D scene drops to a
   static frame).
@@ -53,12 +53,23 @@ canvas re-tint per theme via the `useTheme()` store (`lib/theme.ts`).
 
 ## Internationalisation
 
-Three locales — **French** (default), **English** and **Arabic** — under
-locale-prefixed routes (`/fr`, `/en`, `/ar`):
+Three locales — **French** (default), **English** and **Arabic** — selected
+through **React context, not the URL**. There are no `/fr`, `/en`, `/ar`
+routes and no middleware; every page lives at its plain path (`/`, `/track`,
+`/devenir-livreur`).
 
-- `middleware.ts` redirects bare paths using Accept-Language detection.
-- Dictionaries live in `lib/i18n/{en,fr,ar}.ts`; the English file is the
-  canonical shape and the other locales are type-checked against it.
+- `lib/i18n/I18nProvider.tsx` holds the active locale in an external store
+  (read with `useSyncExternalStore`, like the theme). Switching language is
+  instant and in-place — the URL never changes and the page does not reload.
+- The choice persists in `localStorage`; first-time visitors are matched by
+  `navigator.language`, falling back to French. A boot script sets
+  `<html lang/dir>` before first paint so RTL doesn't flash.
+- `useI18n()` returns `{ locale, dict, setLocale }`; dictionaries live in
+  `lib/i18n/{en,fr,ar}.ts` (the English file is the canonical shape, the
+  others are type-checked against it) and are bundled for the client.
+- SSR/crawlers get a French baseline (`<title>`/meta from each route's
+  static metadata); `usePageTitle` localizes the document title on the
+  client.
 - Arabic renders fully **RTL** with IBM Plex Sans Arabic, mirrored
   directional UI and Arabic scramble glyphs; mechanical geometry
   (marquees, progress bars, tracking codes) stays pinned LTR.

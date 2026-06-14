@@ -1,5 +1,6 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import Hero3D from "@/components/Hero3D";
 import ScrambleText from "@/components/ScrambleText";
 import Counter from "@/components/Counter";
@@ -10,17 +11,11 @@ import TiltCard from "@/components/TiltCard";
 import TrackSearch from "@/components/TrackSearch";
 import RouteCanvas from "@/components/RouteCanvas";
 import DevisForm from "@/components/DevisForm";
-import { isLocale } from "@/lib/i18n/config";
-import { getDictionary } from "@/lib/i18n/dictionaries";
+import { useI18n, usePageTitle } from "@/lib/i18n/I18nProvider";
 
-export default async function Home({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  if (!isLocale(locale)) notFound();
-  const dict = await getDictionary(locale);
+export default function Home() {
+  const { dict } = useI18n();
+  usePageTitle(dict.meta.title);
 
   return (
     <>
@@ -39,14 +34,15 @@ export default async function Home({
           </Reveal>
 
           <h1 className="mt-6 max-w-4xl text-[12vw] leading-[0.98] font-bold tracking-tighter uppercase sm:text-6xl md:text-7xl lg:text-8xl">
-            <ScrambleText text={dict.hero.line1} delay={300} as="span" className="block" />
+            <ScrambleText key={dict.hero.line1} text={dict.hero.line1} delay={300} as="span" className="block" />
             <ScrambleText
+              key={dict.hero.line2}
               text={dict.hero.line2}
               delay={650}
               as="span"
               className="block text-stroke-volt"
             />
-            <ScrambleText text={dict.hero.line3} delay={1000} as="span" className="block" />
+            <ScrambleText key={dict.hero.line3} text={dict.hero.line3} delay={1000} as="span" className="block" />
           </h1>
 
           <div className="pointer-events-auto mt-8 flex max-w-xl flex-col gap-8">
@@ -55,8 +51,8 @@ export default async function Home({
             </Reveal>
             <Reveal delay={0.65}>
               <div className="flex flex-wrap gap-4">
-                <MagneticButton href={`/${locale}#devis`}>{dict.hero.ctaClient}</MagneticButton>
-                <MagneticButton href={`/${locale}/devenir-livreur`} variant="ghost">
+                <MagneticButton href="/#devis">{dict.hero.ctaClient}</MagneticButton>
+                <MagneticButton href="/devenir-livreur" variant="ghost">
                   {dict.hero.ctaCourier}
                 </MagneticButton>
               </div>
@@ -107,7 +103,7 @@ export default async function Home({
                       {s.spec}
                     </p>
                     <Link
-                      href={`/${locale}#devis`}
+                      href="/#devis"
                       className="mt-5 inline-flex items-center gap-2 font-mono text-[10px] font-semibold tracking-[0.22em] text-volt uppercase"
                     >
                       {dict.services.cta}
@@ -171,7 +167,7 @@ export default async function Home({
                 {dict.about.body}
               </p>
               <div className="mt-9">
-                <MagneticButton href={`/${locale}#devis`}>{dict.about.cta}</MagneticButton>
+                <MagneticButton href="/#devis">{dict.about.cta}</MagneticButton>
               </div>
             </Reveal>
 
@@ -320,7 +316,7 @@ export default async function Home({
               <p className="mt-4 max-w-sm text-sm leading-relaxed text-ash">{dict.teaser.body}</p>
             </Reveal>
             <Reveal delay={0.15}>
-              <TrackSearch locale={locale} dict={dict.trackPage.search} />
+              <TrackSearch />
             </Reveal>
           </div>
         </div>

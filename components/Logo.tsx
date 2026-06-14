@@ -1,17 +1,15 @@
 import Link from "next/link";
 
 export default function Logo({
-  locale,
   label,
   className = "",
 }: {
-  locale: string;
   label: string;
   className?: string;
 }) {
   return (
     <Link
-      href={`/${locale}`}
+      href="/"
       className={`group flex items-center gap-2.5 ${className}`}
       aria-label={label}
     >

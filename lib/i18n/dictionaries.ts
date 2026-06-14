@@ -1,5 +1,7 @@
 import type { Locale } from "./config";
 import en from "./en";
+import fr from "./fr";
+import ar from "./ar";
 
 /** Widens literal types from the English source dictionary so the
  *  other locales can provide their own strings. */
@@ -15,12 +17,10 @@ type Widen<T> = T extends string
 
 export type Dictionary = Widen<typeof en>;
 
-const loaders: Record<Locale, () => Promise<Dictionary>> = {
-  en: () => import("./en").then((m) => m.default),
-  fr: () => import("./fr").then((m) => m.default),
-  ar: () => import("./ar").then((m) => m.default),
-};
+/** All locales bundled for the client — language is switched in-context,
+ *  so there is no per-request URL to load a single dictionary from. */
+export const dictionaries: Record<Locale, Dictionary> = { en, fr, ar };
 
-export function getDictionary(locale: Locale): Promise<Dictionary> {
-  return loaders[locale]();
+export function getDictionary(locale: Locale): Dictionary {
+  return dictionaries[locale];
 }
